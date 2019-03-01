@@ -14,3 +14,8 @@ fi
 pushd buildbot
 git reset --hard $BUILDBOT_HASH
 popd
+
+# Apply patches
+pushd buildbot
+git am -3 ../patches/*.patch
+popd

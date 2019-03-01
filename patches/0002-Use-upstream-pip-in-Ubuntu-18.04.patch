@@ -1,0 +1,35 @@
+From de3dd07cde2be80e2fea7e7e1f96d2fc1ae66a1c Mon Sep 17 00:00:00 2001
+From: Edward Wang <edward.c.wang@compdigitec.com>
+Date: Wed, 20 Feb 2019 15:03:26 -0800
+Subject: [PATCH 2/2] Use upstream pip in Ubuntu 18.04
+
+---
+ worker/Dockerfile.py3 | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/worker/Dockerfile.py3 b/worker/Dockerfile.py3
+index 0c82cf5..7672660 100644
+--- a/worker/Dockerfile.py3
++++ b/worker/Dockerfile.py3
+@@ -30,16 +30,15 @@ RUN         apt-get update && \
+     libffi-dev \
+     libssl-dev \
+     python3-setuptools \
++    python3-pip \
+     curl && \
+     # Test runs produce a great quantity of dead grandchild processes.  In a
+     # non-docker environment, these are automatically reaped by init (process 1),
+     # so we need to simulate that here.  See https://github.com/Yelp/dumb-init
+     apt-get -y install -q dumb-init && \
+     rm -rf /var/lib/apt/lists/* && \
+-    # ubuntu pip version has issues so we should use the official upstream version it: https://github.com/pypa/pip/pull/3287
+-    easy_install3 pip && \
+     # Install required python packages, and twisted
+-    pip --no-cache-dir install 'twisted[tls]' && \
++    pip3 --no-cache-dir install 'twisted[tls]' && \
+     mkdir /buildbot &&\
+     useradd -ms /bin/bash buildbot
+ 
+-- 
+2.19.1
+
