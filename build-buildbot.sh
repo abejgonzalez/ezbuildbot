@@ -12,5 +12,5 @@ fi
 
 # Check out desired hash
 pushd buildbot
-git reset --hard BUILDBOT_HASH
+git reset --hard $BUILDBOT_HASH
 popd
