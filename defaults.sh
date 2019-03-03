@@ -1,11 +1,20 @@
 #!/bin/bash
 # Snippet sourced in order to set some default variables.
+# See README.md for documentation about these variables.
 
 # ${VAR+x} is to detect unset variables.
 # See https://stackoverflow.com/a/13864829
 
 if [ -z "${PROJ_PREFIX+x}" ]; then
     export PROJ_PREFIX=myproject
+fi
+
+if [ -z "${BUILDBOT_ADMIN_PORT+x}" ]; then
+    export BUILDBOT_ADMIN_PORT=8020
+fi
+
+if [ -z "${BUILDBOT_COMMS_PORT+x}" ]; then
+    export BUILDBOT_COMMS_PORT=9989
 fi
 
 if [ -z "${BUILDBOT_HASH+x}" ]; then
