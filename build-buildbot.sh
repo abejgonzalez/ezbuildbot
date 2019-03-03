@@ -19,3 +19,13 @@ popd
 pushd buildbot
 git am -3 ../patches/*.patch
 popd
+
+# Build buildbot master image
+pushd buildbot/master
+docker build -t "${PROJ_PREFIX}-master-base" .
+popd
+
+# Build buildbot worker image
+pushd buildbot/worker
+docker build -t "${PROJ_PREFIX}-worker-base" -f Dockerfile.py3 .
+popd
