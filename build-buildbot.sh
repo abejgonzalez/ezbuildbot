@@ -7,7 +7,7 @@ source defaults.sh
 
 # Check out buildbot folder if not present
 if [ ! -d "buildbot" ]; then
-    git clone git@github.com:buildbot/buildbot.git buildbot
+    git clone https://github.com/buildbot/buildbot.git buildbot
 fi
 
 # Check out desired hash
