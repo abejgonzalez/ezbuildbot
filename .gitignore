@@ -1,2 +1,4 @@
 # buildbot source dir
 buildbot/
+# temp dir
+tmp/
