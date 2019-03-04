@@ -14,7 +14,7 @@ First ensure the following environment variables are set:
 * `BUILD_TEMPDIR` (optional): temporary folder used in the build, defaults to `tmp`.
 
 The following scripts build/set up various images and instances:
-* `build-buildbot.sh`: Build the buildbot base images (required for other commands).
-* `start-master.sh`: Re-starts the master instance. Usually it is preferred to use this command after changing the configuration since it will rebuild the image (required for changes to take effect) before re-running it.
-** `build-master.sh`: Re-builds the master image.
-** `run-master.sh`: Re-run the master instance from the master image but does NOT rebuild the image.
+* `build-buildbot`: Build the buildbot base images (required for other commands).
+* `start-master`: Re-starts the master instance. Usually it is preferred to use this command after changing the configuration since it will rebuild the image (required for changes to take effect) before re-running it.
+** `build-master`: Re-builds the master image.
+** `run-master`: Re-run the master instance from the master image but does NOT rebuild the image.
