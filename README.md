@@ -9,6 +9,7 @@ First ensure the following environment variables are set:
 * `BUILDBOT_ADMIN_PORT`: buildbot web admin port. Defaults to 8020.
 * `BUILDBOT_COMMS_PORT`: buildbot communication port used for communication between workers and the buildbot master. Defaults to 9989.
 * `BUILDBOT_CONFIG`: this points to a `buildbot.cfg`/`master.cfg` file. You can use the `./generate_config` script to do so.
+* `BUILDBOT_WORKER_DOCKERFRAG`: Dockerfile fragment that helps set up the worker image. Defaults to a blank file.
 * `BUILDBOT_HASH` (optional): set this to use a custom buildbot revision. Usually the default one is fine.
 * `BUILD_TEMPDIR` (optional): temporary folder used in the build, defaults to `tmp`.
 

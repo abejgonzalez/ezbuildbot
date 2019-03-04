@@ -17,7 +17,8 @@ USER root
 RUN bash -c 'echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> /etc/ssh/ssh_config'
 ENV GIT_TERMINAL_PROMPT 0
 
-# TODO(edwardw): add hook to make this parametrizable
+# User-provided Dockerfrag.
+$(cat $BUILDBOT_WORKER_DOCKERFRAG)
 
 # Run image (copied from parent Dockerfile)
 USER buildbot
