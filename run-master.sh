@@ -15,9 +15,12 @@ docker rm "${PROJ_PREFIX}-master-inst" --force || true
 # -v a:b = binds host file a to container file b
 # -p a:b = bind host port a to container port b
 # -d = detach and run in background
+# -e "FOO=bar" = set environment variable in container
 docker run --name "${PROJ_PREFIX}-master-inst" -it \
   -v "${SQLITE_FILE}:/var/lib/buildbot/state.sqlite" \
   -p $BUILDBOT_ADMIN_PORT:$BUILDBOT_ADMIN_PORT \
   -p $BUILDBOT_COMMS_PORT:$BUILDBOT_COMMS_PORT \
+  -e "BUILDBOT_ADMIN_PORT=${BUILDBOT_ADMIN_PORT}" \
+  -e "BUILDBOT_COMMS_PORT=${BUILDBOT_COMMS_PORT}" \
   -d \
   "${PROJ_PREFIX}-master"
