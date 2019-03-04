@@ -5,6 +5,7 @@ Usage
 
 First ensure the following environment variables are set:
 * `PROJ_PREFIX`: this sets the prefix for all the Docker images that are built. For example, if `PROJ_PREFIX` is set to `foobar`, images like `foobar-master-base`, `foobar-master` will be built.
+* `SQLITE_FILE`: path to the SQLite databased used to store state. Defauls to `state.sqlite`.
 * `BUILDBOT_ADMIN_PORT`: buildbot web admin port. Defaults to 8020.
 * `BUILDBOT_COMMS_PORT`: buildbot communication port used for communication between workers and the buildbot master. Defaults to 9989.
 * `BUILDBOT_CONFIG`: this points to a `buildbot.cfg`/`master.cfg` file. You can use the `./generate_config` script to do so.

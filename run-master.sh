@@ -5,10 +5,8 @@ set -euo pipefail
 
 source defaults.sh
 
-# TODO(edwardw): parametrize this
-# Make sure state.sqlite exists.
-SQLITE_FILE="${PWD}/state.sqlite"
-touch "$SQLITE_FILE"
+# Make sure the sqlite database file exists.
+touch $SQLITE_FILE
 
 # Terminate any previous running instance.
 docker rm "${PROJ_PREFIX}-master-inst" --force || true

@@ -9,6 +9,10 @@ if [ -z "${PROJ_PREFIX+x}" ]; then
     export PROJ_PREFIX=myproject
 fi
 
+if [ -z "${SQLITE_FILE+x}" ]; then
+    export SQLITE_FILE="${PWD}/state.sqlite"
+fi
+
 if [ -z "${BUILDBOT_ADMIN_PORT+x}" ]; then
     export BUILDBOT_ADMIN_PORT=8020
 fi
