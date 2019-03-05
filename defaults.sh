@@ -2,6 +2,9 @@
 # Snippet sourced in order to set some default variables.
 # See README.md for documentation about these variables.
 
+# Script dir (folder this script resides in)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # ${VAR+x} is to detect unset variables.
 # See https://stackoverflow.com/a/13864829
 
@@ -9,8 +12,13 @@ if [ -z "${PROJ_PREFIX+x}" ]; then
     export PROJ_PREFIX=myproject
 fi
 
+if [ -z "${EZBUILDBOT_WORKDIR+x}" ]; then
+    # By default this is the script dir (folder this script resides in)
+    export EZBUILDBOT_WORKDIR="$SCRIPT_DIR"
+fi
+
 if [ -z "${SQLITE_FILE+x}" ]; then
-    export SQLITE_FILE="${PWD}/state.sqlite"
+    export SQLITE_FILE="${EZBUILDBOT_WORKDIR}/state.sqlite"
 fi
 
 if [ -z "${BUILDBOT_ADMIN_PORT+x}" ]; then
@@ -31,10 +39,10 @@ if [ -z "${BUILDBOT_HASH+x}" ]; then
 fi
 
 if [ -z "${BUILDBOT_CONFIG+x}" ]; then
-    export BUILDBOT_CONFIG="sample-master.cfg"
+    export BUILDBOT_CONFIG="${SCRIPT_DIR}/sample-master.cfg"
 fi
 
 if [ -z "${BUILD_TEMPDIR+x}" ]; then
-    export BUILD_TEMPDIR=tmp
+    export BUILD_TEMPDIR="${SCRIPT_DIR}/tmp"
 fi
 mkdir -p $BUILD_TEMPDIR
