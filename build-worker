@@ -3,7 +3,9 @@
 set -ex
 set -euo pipefail
 
-source defaults.sh
+# Get script dir since the script could be executed in many different places.
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+source $SCRIPT_DIR/defaults.sh
 
 cp $(readlink -f $BUILDBOT_CONFIG) $BUILD_TEMPDIR/master.cfg
 cat > $BUILD_TEMPDIR/Dockerfile.worker <<EOF
