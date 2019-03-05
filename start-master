@@ -1,5 +1,9 @@
 #!/bin/sh
 # Start the master instance: rebuild the master image and run it.
 set -ex
-./build-master
-./run-master
+
+# Get script dir since the script could be executed in many different places.
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+$SCRIPT_DIR/build-master
+$SCRIPT_DIR/run-master

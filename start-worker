@@ -1,5 +1,9 @@
 #!/bin/sh
 # Start a worker instance: rebuild the worker image and run it.
 set -ex
-./build-master
-./run-master $@
+
+# Get script dir since the script could be executed in many different places.
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+$SCRIPT_DIR/build-worker
+$SCRIPT_DIR/run-worker $@
