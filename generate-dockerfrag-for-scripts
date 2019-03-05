@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+#  generate-dockerfrag-for-scripts
+#  Generate Dockerfile fragments for scripts to be run during the building
+#  of a docker image.
+#
+#  Copyright 2019 Edward Wang <edward.c.wang@compdigitec.com>
+
+import argparse
+import os
+import shutil
+import sys
+from typing import Dict
+
+def main(args: Dict[str, str]) -> int:
+    scripts_str = args['scripts'][0].strip()
+    if scripts_str == "":
+        scripts = []  # type: List[str]
+    else:
+        scripts = scripts_str.split(":")  # type: List[str]
+    folder = str(args['folder'][0])
+
+    if not os.path.isdir(folder):
+        raise ValueError(f"Dockerfile directory {folder} is not a directory")
+
+    for script in scripts:
+        if not os.path.isfile(script):
+            raise ValueError(f"Script {script} does not exist or is not a file")
+
+        filename = os.path.basename(script)
+        shutil.copy2(script, folder)
+        print(f"COPY {filename} /opt")
+        print(f"RUN /opt/{filename}")
+    return 0
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("scripts", nargs=1, help="Comma-delimited list of scripts")
+    parser.add_argument("folder", nargs=1, help="Dockerfile directory (where to copy scripts into for building)")
+    args = vars(parser.parse_args(sys.argv[1:]))
+    sys.exit(main(args))

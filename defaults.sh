@@ -29,6 +29,10 @@ if [ -z "${BUILDBOT_COMMS_PORT+x}" ]; then
     export BUILDBOT_COMMS_PORT=9989
 fi
 
+if [ -z "${BUILDBOT_WORKER_SCRIPTS+x}" ]; then
+    export BUILDBOT_WORKER_SCRIPTS=""
+fi
+
 if [ -z "${BUILDBOT_WORKER_DOCKERFRAG+x}" ]; then
     # Reading from /dev/null is equivalent to reading an empty file
     export BUILDBOT_WORKER_DOCKERFRAG=/dev/null
