@@ -38,6 +38,10 @@ if [ -z "${BUILDBOT_WORKER_DOCKERFRAG+x}" ]; then
     export BUILDBOT_WORKER_DOCKERFRAG=/dev/null
 fi
 
+if [ -z "${BUILDBOT_WORKER_LANG+x}" ]; then
+    export BUILDBOT_WORKER_LANG="C.UTF-8"
+fi
+
 if [ -z "${BUILDBOT_HASH+x}" ]; then
     export BUILDBOT_HASH=ec38d8f7bbffa4fc792d5bb6466c336015131197
 fi

@@ -19,6 +19,9 @@ USER root
 RUN bash -c 'echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> /etc/ssh/ssh_config'
 ENV GIT_TERMINAL_PROMPT 0
 
+# Set LANG/locale
+ENV LANG ${BUILDBOT_WORKER_LANG}
+
 # User-specified scripts to run in the container.
 $($SCRIPT_DIR/generate-dockerfrag-for-scripts "$BUILDBOT_WORKER_SCRIPTS" "$BUILD_TEMPDIR")
 
