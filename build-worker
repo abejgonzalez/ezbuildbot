@@ -25,6 +25,12 @@ $($SCRIPT_DIR/generate-dockerfrag-for-scripts "$BUILDBOT_WORKER_SCRIPTS" "$BUILD
 # User-provided Dockerfrag.
 $(cat $BUILDBOT_WORKER_DOCKERFRAG)
 
+# Set git identity to avoid issues with some commands.
+# e.g. "fatal: empty ident name" with git am
+USER buildbot
+RUN git config --global user.name "Buildbot"
+RUN git config --global user.email "anonymous@example.com"
+
 # Run image (copied from parent Dockerfile)
 USER buildbot
 WORKDIR /buildbot
