@@ -30,8 +30,12 @@ docker rm "$inst_name" --force || true
 # WORKERNAME: the name of the worker as declared in the master configuration
 # WORKERPASS: worker password
 
-# TODO(edwardw): extra options for passing in settings like SSH
-#~ -v "$HOME/.ssh:/home/buildbot/.ssh:ro"
+# Pass SSH through if specified. If not, don't use this option.
+if [ -z "${BUILDBOT_SSH_PASSTHROUGH}" ]; then
+  ssh_options=()
+else
+  ssh_options=( "-v" "${BUILDBOT_SSH_PASSTHROUGH}:/home/buildbot/.ssh:ro" )
+fi
 
 docker run \
   --name "$inst_name" \
@@ -42,4 +46,5 @@ docker run \
   -e "WORKERNAME=${WORKER_NAME}" \
   -e "WORKERPASS=${WORKER_PASSWORD}" \
   -d \
+  "${ssh_options[@]}" \
   "${PROJ_PREFIX}-worker"

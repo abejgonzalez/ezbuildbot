@@ -12,6 +12,7 @@ First ensure the following environment variables are set:
 * `BUILDBOT_CONFIG`: this points to a `buildbot.cfg`/`master.cfg` file. You can use the `./generate_config` script to do so.
 * `BUILDBOT_WORKER_SCRIPTS`: Comma-delimited list of scripts to run when building the worker image. Defaults to blank.
 * `BUILDBOT_WORKER_DOCKERFRAG`: Dockerfile fragment that helps set up the worker image. Defaults to a blank file.
+* `BUILDBOT_SSH_PASSTHROUGH` (optional): if present, will bind the given folder to `~/.ssh` on the worker to test private repos.
 * `BUILDBOT_HASH` (optional): set this to use a custom buildbot revision. Usually the default one is fine.
 * `BUILD_TEMPDIR` (optional): temporary folder used in the build, defaults to `$EZBUILDBOT_WORKDIR/tmp`.
 

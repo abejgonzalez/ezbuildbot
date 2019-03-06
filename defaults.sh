@@ -42,6 +42,10 @@ if [ -z "${BUILDBOT_HASH+x}" ]; then
     export BUILDBOT_HASH=ec38d8f7bbffa4fc792d5bb6466c336015131197
 fi
 
+if [ -z "${BUILDBOT_SSH_PASSTHROUGH+x}" ]; then
+    export BUILDBOT_SSH_PASSTHROUGH=""
+fi
+
 if [ -z "${BUILDBOT_CONFIG+x}" ]; then
     export BUILDBOT_CONFIG="${SCRIPT_DIR}/sample-master.cfg"
 fi
