@@ -11,6 +11,10 @@ cp $(readlink -f $BUILDBOT_CONFIG) $BUILD_TEMPDIR/master.cfg
 cat > $BUILD_TEMPDIR/Dockerfile.master <<EOF
 FROM ${PROJ_PREFIX}-master-base
 
+# Install treq for HTTPClientService
+# Required for some features like GitHub integration
+RUN pip3 install treq
+
 COPY master.cfg /var/lib/buildbot/master.cfg
 
 # Run image (copied from parent Dockerfile)
