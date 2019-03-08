@@ -1,0 +1,281 @@
+From fb724c3d7951ae4010d64f8e952e44558c0260d3 Mon Sep 17 00:00:00 2001
+From: Edward Wang <edward.c.wang@compdigitec.com>
+Date: Fri, 8 Mar 2019 14:22:08 -0800
+Subject: [PATCH] Add additional options to github reporter
+
+Including per-step status reporting
+---
+ master/buildbot/reporters/github.py | 187 +++++++++++++++++++++-------
+ 1 file changed, 144 insertions(+), 43 deletions(-)
+
+diff --git a/master/buildbot/reporters/github.py b/master/buildbot/reporters/github.py
+index 9aca436b2..5ef9fb5b5 100644
+--- a/master/buildbot/reporters/github.py
++++ b/master/buildbot/reporters/github.py
+@@ -32,21 +32,31 @@ from buildbot.reporters import http
+ from buildbot.util import httpclientservice
+ from buildbot.util.giturlparse import giturlparse
+ 
++from typing import Any, Dict, List, Optional, Tuple
++
+ HOSTED_BASE_URL = 'https://api.github.com'
+ 
+ 
+ class GitHubStatusPush(http.HttpStatusPushBase):
+     name = "GitHubStatusPush"
+-    neededDetails = dict(wantProperties=True)
++    neededDetails = dict(
++        wantProperties=True,
++        wantSteps=True, # needed to report separate statuses for Github
++        wantLogs=True # needed to push logs to Github in case of failure
++    )
+ 
+     @defer.inlineCallbacks
+     def reconfigService(self, token,
+                         startDescription=None, endDescription=None,
++                        postURLs=False,  # set this to True to post URLs to GitHub
++                        reportLogOnFailure: Optional[bool] = None,  # set this to True to post the build log as a comment on failure
++                        reportOnlyFailures: Optional[bool] = None,  # set this to True to only post a failure as a status/comment
++                        reportGlobalStatus: Optional[bool] = None,  # set this to True to post global pass/fail as a status/comment
+                         context=None, baseURL=None, verbose=False, **kwargs):
+         token = yield self.renderSecrets(token)
+         yield http.HttpStatusPushBase.reconfigService(self, **kwargs)
+ 
+-        self.setDefaults(context, startDescription, endDescription)
++        self.setDefaults(context, startDescription, endDescription, reportLogOnFailure, reportOnlyFailures, reportGlobalStatus)
+         if baseURL is None:
+             baseURL = HOSTED_BASE_URL
+         if baseURL.endswith('/'):
+@@ -60,10 +70,19 @@ class GitHubStatusPush(http.HttpStatusPushBase):
+             debug=self.debug, verify=self.verify)
+         self.verbose = verbose
+ 
+-    def setDefaults(self, context, startDescription, endDescription):
++        assert isinstance(postURLs, bool)
++        self.postURLs = postURLs
++
++    def setDefaults(self, context, startDescription, endDescription, reportLogOnFailure, reportOnlyFailures, reportGlobalStatus):
+         self.context = context or Interpolate('buildbot/%(prop:buildername)s')
+         self.startDescription = startDescription or 'Build started.'
+         self.endDescription = endDescription or 'Build done.'
++        # Do NOT report logs into the status messages
++        self.reportLogOnFailure = False if reportLogOnFailure is None else reportLogOnFailure
++        # Report both success and failure as status NOT only failures
++        self.reportOnlyFailures = False if reportOnlyFailures is None else reportOnlyFailures
++        # Report global success/failure as status
++        self.reportGlobalStatus = True if reportGlobalStatus is None else reportGlobalStatus
+ 
+     def createStatus(self,
+                      repo_user, repo_name, sha, state, target_url=None,
+@@ -88,7 +107,7 @@ class GitHubStatusPush(http.HttpStatusPushBase):
+         if description is not None:
+             payload['description'] = description
+ 
+-        if target_url is not None:
++        if target_url is not None and self.postURLs:
+             payload['target_url'] = target_url
+ 
+         if context is not None:
+@@ -103,6 +122,66 @@ class GitHubStatusPush(http.HttpStatusPushBase):
+         props = Properties.fromDict(build['properties'])
+         props.master = self.master
+ 
++        # build is a Dict[str, Any]
++        assert isinstance(build, dict)
++        # build['steps'] contains information from each build step.
++        steps: List[Dict[str, Any]] = build['steps']
++        assert isinstance(steps, list)
++
++        def parse_logstr(log_str):
++            # Parse a log string (e.g. "h using PTY: False\no[] Loading\ne error")
++            # Lines that start with 'h' are buildbot headers, 'o' stdout, and 'e' stderr.
++            # http://docs.buildbot.net/1.2.0/developer/cls-logobserver.html#buildbot.process.logobserver.LineConsumerLogObserver
++
++            def escape_ansi(line):
++                """Prevent ANSI (e.g. colour) sequences from escaping onto Github."""
++                # https://stackoverflow.com/a/38662876
++                ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
++                return ansi_escape.sub('', line)
++
++            # Skip buildbot headers, keep stdout and stderr
++            output_lines = []
++            for line in log_str.split("\n"):
++                if line.startswith("h"):
++                    continue
++                else:
++                    # Remove the first character of 'h', 'o', or 'e'.
++                    output_lines.append(line[1:])
++
++            # Remove ANSI sequences
++            output_lines = map(escape_ansi, output_lines)
++
++            return "\n".join(output_lines)
++
++        def parse_step(step: Dict[str, Any]) -> Tuple[str, str, str]:
++            """
++            Parse the given step.
++            :return: Tuple of (step name, step state: "success" or "failure", logs)
++            """
++            assert isinstance(step, dict)
++
++            # Not sure when there would be more than 1 logs
++            logs = step['logs']
++            assert len(logs) == 1
++
++            log_str = logs[0]['content']['content']
++            assert isinstance(log_str, str), "log_str should be a string"
++            return (
++                step['name'],
++                {
++                    SUCCESS: 'success',
++                    WARNINGS: 'success',
++                    FAILURE: 'failure',
++                    SKIPPED: 'success',
++                    EXCEPTION: 'error',
++                    RETRY: 'pending',
++                    CANCELLED: 'error'
++                }.get(step['results'], 'error'),
++                parse_logstr(log_str)
++            )
++
++        steps_parsed_list: List[Tuple[str, str, str]] = list(map(parse_step, steps))
++
+         if build['complete']:
+             state = {
+                 SUCCESS: 'success',
+@@ -120,6 +199,9 @@ class GitHubStatusPush(http.HttpStatusPushBase):
+         else:
+             return
+ 
++        # Append global status
++        steps_parsed_list.append(('', state, '<no separate log for global status>'))
++
+         context = yield props.render(self.context)
+ 
+         sourcestamps = build['buildset'].get('sourcestamps')
+@@ -129,11 +211,9 @@ class GitHubStatusPush(http.HttpStatusPushBase):
+ 
+         project = sourcestamps[0]['project']
+ 
+-        branch = props['branch']
+-        m = re.search(r"refs/pull/([0-9]*)/merge", branch)
+-        if m:
+-            issue = m.group(1)
+-        else:
++        try:
++            issue = str(props['issue_number'])
++        except KeyError:
+             issue = None
+ 
+         if "/" in project:
+@@ -147,52 +227,73 @@ class GitHubStatusPush(http.HttpStatusPushBase):
+             log.msg("Updating github status: repoOwner={repoOwner}, repoName={repoName}".format(
+                 repoOwner=repoOwner, repoName=repoName))
+ 
++        def is_failure(step_state):
++            return step_state == 'failure' or step_state == 'error'
++
+         for sourcestamp in sourcestamps:
+             sha = sourcestamp['revision']
+-            try:
+-                repo_user = repoOwner
+-                repo_name = repoName
+-                target_url = build['url']
+-                response = yield self.createStatus(
+-                    repo_user=repo_user,
+-                    repo_name=repo_name,
+-                    sha=sha,
+-                    state=state,
+-                    target_url=target_url,
+-                    context=context,
+-                    issue=issue,
+-                    description=description
+-                )
+-
+-                if not self.isStatus2XX(response.code):
+-                    raise Exception()
+-
+-                if self.verbose:
+-                    log.msg(
+-                        'Updated status with "{state}" for {repoOwner}/{repoName} '
++            for step_name, step_state, step_log in steps_parsed_list:
++                if not is_failure(step_state) and self.reportOnlyFailures:
++                    continue
++
++                if step_name == '' and not self.reportGlobalStatus:
++                    continue
++
++                step_context = context
++                if step_name != '':
++                    step_context = context + " - " + step_name
++                step_description = step_state
++                if step_name != '' and is_failure(step_state) and self.reportLogOnFailure:
++                    # Create a pre-formatted/block Markdown comment
++                    step_description = "Step `{step}` failed with details below:\n".format(step=step_name) + "```\n{step_log}\n```".format(step_log=step_log)
++                try:
++                    repo_user = repoOwner
++                    repo_name = repoName
++                    state = step_state
++                    target_url = build['url']
++                    yield self.createStatus(
++                        repo_user=repo_user,
++                        repo_name=repo_name,
++                        sha=sha,
++                        state=state,
++                        target_url=target_url,
++                        context=step_context,
++                        issue=issue,
++                        description=step_description
++                    )
++                    if self.verbose:
++                        log.msg(
++                            'Updated status with "{state}" for {repoOwner}/{repoName} '
++                            'at {sha}, context "{context}", issue {issue}.'.format(
++                                state=state, repoOwner=repoOwner, repoName=repoName,
++                                sha=sha, issue=issue, context=step_context))
++                except Exception as e:
++                    log.err(
++                        e,
++                        'Failed to update "{state}" for {repoOwner}/{repoName} '
+                         'at {sha}, context "{context}", issue {issue}.'.format(
+                             state=state, repoOwner=repoOwner, repoName=repoName,
+-                            sha=sha, issue=issue, context=context))
+-            except Exception as e:
+-                content = yield response.content()
+-                log.err(
+-                    e,
+-                    'Failed to update "{state}" for {repoOwner}/{repoName} '
+-                    'at {sha}, context "{context}", issue {issue}. '
+-                    'http {code}, {content}'.format(
+-                        state=state, repoOwner=repoOwner, repoName=repoName,
+-                        sha=sha, issue=issue, context=context,
+-                        code=response.code, content=content))
++                            sha=sha, issue=issue, context=step_context))
+ 
+ 
+ class GitHubCommentPush(GitHubStatusPush):
+     name = "GitHubCommentPush"
+-    neededDetails = dict(wantProperties=True)
++    neededDetails = dict(
++        wantProperties=True,
++        wantSteps=True, # needed to report separate statuses for Github
++        wantLogs=True # needed to push logs to Github in case of failure
++    )
+ 
+-    def setDefaults(self, context, startDescription, endDescription):
++    def setDefaults(self, context, startDescription, endDescription, reportLogOnFailure, reportOnlyFailures, reportGlobalStatus):
+         self.context = ''
+         self.startDescription = startDescription
+         self.endDescription = endDescription or 'Build done.'
++        # For comments, report logs on failure
++        self.reportLogOnFailure = True if reportLogOnFailure is None else reportLogOnFailure
++        # Don't post success comments
++        self.reportOnlyFailures = True if reportOnlyFailures is None else reportOnlyFailures
++        # Don't post a global failure/success comment
++        self.reportGlobalStatus = False if reportGlobalStatus is None else reportGlobalStatus
+ 
+     def createStatus(self,
+                      repo_user, repo_name, sha, state, target_url=None,
+-- 
+2.19.1
+
