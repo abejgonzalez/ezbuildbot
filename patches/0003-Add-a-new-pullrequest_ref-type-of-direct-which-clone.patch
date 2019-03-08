@@ -1,0 +1,109 @@
+From 2f9f3a427d5d4acef36a589ee25be7dc09b9a961 Mon Sep 17 00:00:00 2001
+From: Edward Wang <edward.c.wang@compdigitec.com>
+Date: Fri, 8 Mar 2019 09:58:32 -0800
+Subject: [PATCH] Add a new pullrequest_ref type of direct which clones the PR
+ branch directly
+
+---
+ master/buildbot/steps/source/git.py | 18 ++++++++++++++++++
+ master/buildbot/www/hooks/github.py | 29 ++++++++++++++++++++++++++---
+ 2 files changed, 44 insertions(+), 3 deletions(-)
+
+diff --git a/master/buildbot/steps/source/git.py b/master/buildbot/steps/source/git.py
+index 22f3a9a17..b79b8f2c0 100644
+--- a/master/buildbot/steps/source/git.py
++++ b/master/buildbot/steps/source/git.py
+@@ -144,6 +144,10 @@ class Git(Source, GitStepMixin):
+         self.method = method
+         self.prog = progress
+         self.repourl = repourl
++        self.repourl_default = repourl
++        # This is a variable which can be set to True to force
++        # _sourcedirIsUpdatable to mark the repo for clobbering.
++        self.must_clobber = False
+         self.reference = reference
+         self.retryFetch = retryFetch
+         self.submodules = submodules
+@@ -177,6 +181,17 @@ class Git(Source, GitStepMixin):
+     @defer.inlineCallbacks
+     def startVC(self, branch, revision, patch):
+         self.branch = branch or 'HEAD'
++        if "/* fork-at */" in self.branch:
++            s_branch, s_repourl = self.branch.split("/* fork-at */")
++            self.branch = s_branch
++            self.repourl = s_repourl
++            # Must clobber if changing remotes as the buildbot git plugin
++            # will by default just try to checkout.
++            self.must_clobber = True
++        else:
++            self.repourl = self.repourl_default
++            self.must_clobber = False
++
+         self.revision = revision
+ 
+         self.method = self._getMethod()
+@@ -558,6 +573,9 @@ class Git(Source, GitStepMixin):
+ 
+     @defer.inlineCallbacks
+     def _sourcedirIsUpdatable(self):
++        if self.must_clobber:
++            defer.returnValue("clobber")
++
+         if self.workerVersionIsOlderThan('listdir', '2.16'):
+             git_path = self.build.path_module.join(self.workdir, '.git')
+             exists = yield self.pathExists(git_path)
+diff --git a/master/buildbot/www/hooks/github.py b/master/buildbot/www/hooks/github.py
+index 940844588..ecd542053 100644
+--- a/master/buildbot/www/hooks/github.py
++++ b/master/buildbot/www/hooks/github.py
+@@ -164,7 +164,24 @@ class GitHubEventHandler(PullRequestMixin):
+     def handle_pull_request(self, payload, event):
+         changes = []
+         number = payload['number']
+-        refname = 'refs/pull/{}/{}'.format(number, self.pullrequest_ref)
++
++        project = payload['pull_request']['base']['repo']['full_name']
++        branch = payload['pull_request']['head']['ref']
++        # We add a new pullrequest_ref type "direct" which pulls remote
++        # repos directly instead of using refs/pull/<...>/<ref>.
++        if self.pullrequest_ref == "direct":
++            # If the pull request lives on a fork, pass this information
++            # along to the backend.
++            if payload['pull_request']['head']['repo']['full_name'] != project:
++                # Repo where the branch lives, not necessarily the same
++                # as the project repo.
++                pr_repository = payload['pull_request']['head']['repo']['git_url']
++                branch = branch + "/* fork-at */" + pr_repository # special token to alert the backend
++
++            refname = branch
++        else:
++            refname = 'refs/pull/{}/{}'.format(number, self.pullrequest_ref)
++
+         commits = payload['pull_request']['commits']
+         title = payload['pull_request']['title']
+         comments = payload['pull_request']['body']
+@@ -187,13 +204,19 @@ class GitHubEventHandler(PullRequestMixin):
+ 
+         properties = self.extractProperties(payload['pull_request'])
+         properties.update({'event': event})
++        properties.update({'issue_number': number})
++
++        # We want the git_url for the repo for cloning as opposed to the
++        # html_url.
++        repository = payload['repository']['git_url']
++
+         change = {
+             'revision': payload['pull_request']['head']['sha'],
+             'when_timestamp': dateparse(payload['pull_request']['created_at']),
+             'branch': refname,
+             'revlink': payload['pull_request']['_links']['html']['href'],
+-            'repository': payload['repository']['html_url'],
+-            'project': payload['pull_request']['base']['repo']['full_name'],
++            'repository': repository,
++            'project': project,
+             'category': 'pull',
+             # TODO: Get author name based on login id using txgithub module
+             'author': payload['sender']['login'],
+-- 
+2.19.1
+
