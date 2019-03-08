@@ -7,6 +7,12 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 source $SCRIPT_DIR/defaults.sh
 
+# These are useful for quick debugging in a pinch without rebuilding the
+# underlying buildbot images.
+#~ cp $EZBUILDBOT_WORKDIR/buildbot/master/buildbot/www/hooks/github.py $BUILD_TEMPDIR
+#~ cp $EZBUILDBOT_WORKDIR/buildbot/master/buildbot/steps/source/git.py $BUILD_TEMPDIR
+#~ cp $EZBUILDBOT_WORKDIR/buildbot/master/buildbot/reporters/github.py $BUILD_TEMPDIR/reporters_github.py
+
 cp $(readlink -f $BUILDBOT_CONFIG) $BUILD_TEMPDIR/master.cfg
 cat > $BUILD_TEMPDIR/Dockerfile.master <<EOF
 FROM ${PROJ_PREFIX}-master-base
@@ -14,6 +20,11 @@ FROM ${PROJ_PREFIX}-master-base
 # Install treq for HTTPClientService
 # Required for some features like GitHub integration
 RUN pip3 install treq
+
+# Helpful lines for debugging (see above)
+#~ COPY github.py /usr/lib/python3.6/site-packages/buildbot/www/hooks/github.py
+#~ COPY git.py /usr/lib/python3.6/site-packages/buildbot/steps/source/git.py
+#~ COPY reporters_github.py /usr/lib/python3.6/site-packages/buildbot/reporters/github.py
 
 COPY master.cfg /var/lib/buildbot/master.cfg
 
