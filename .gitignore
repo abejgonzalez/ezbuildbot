@@ -2,3 +2,7 @@
 buildbot/
 # temp dir
 tmp/
+
+# junk
+.mypy_cache
+__pycache__
