@@ -16,6 +16,7 @@ if [ -z "${EZBUILDBOT_WORKDIR+x}" ]; then
     # By default this is the script dir (folder this script resides in)
     export EZBUILDBOT_WORKDIR="$SCRIPT_DIR"
 fi
+mkdir -p $EZBUILDBOT_WORKDIR
 
 if [ -z "${SQLITE_FILE+x}" ]; then
     export SQLITE_FILE="${EZBUILDBOT_WORKDIR}/state.sqlite"
