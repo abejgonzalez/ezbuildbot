@@ -12,18 +12,8 @@ import unittest
 
 
 class BuildbotConfigTest(unittest.TestCase):
-    sample_config_str = """
-builders:
-- name: "myrepo-build"
-  git_url: "git@github.com:myorg/myrepo.git"
-  steps:
-  - ["test1", "./test1.sh"]
-  - ["test2", "./test2.sh"]
-- name: "otherepo-build"
-  git_url: "git@github.com:myorg/otherepo.git"
-  steps:
-  - ["mytest", "./test.py"]
-"""
+    with open("test.yml", 'r') as f:
+        sample_config_str = str(f.read())
 
     def test_parse_yaml(self) -> None:
         """

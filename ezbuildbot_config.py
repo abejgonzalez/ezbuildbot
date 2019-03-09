@@ -57,6 +57,6 @@ class BuildbotConfig:
         with open(filename, 'r') as f:
             contents = str(f.read())
 
-        is_yaml = os.path.splitext(filename) in {".yml", ".yaml"}
+        is_yaml = os.path.splitext(filename)[1] in {".yml", ".yaml"}
 
         return BuildbotConfig(contents, is_yaml=is_yaml)

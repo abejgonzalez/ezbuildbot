@@ -6,13 +6,94 @@
 
 import ast
 import astor
+import copy
 import sys
+from typing import Optional
 
 from ezbuildbot_config import *
 
 # 0.5 is not compatible with Python >3.5
 astor_version = astor.__version__.split(".")
-assert int(astor_version[0]) >= 0 and int(astor_version[1]) > 5, "requires astor version 0.6 or higher"
+assert int(astor_version[0]) >= 0 and int(
+    astor_version[1]) > 5, "requires astor version 0.6 or higher"
+
+
+class GetFunction(ast.NodeVisitor):
+    def __init__(self, function: str) -> None:
+        """
+        Get the named function from the AST.
+        """
+        self.function = function
+        self.result: Optional[ast.FunctionDef] = None
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        if node.name == self.function:
+            self.result = node
+
+
+def get_function(name: str, module: ast.Module) -> ast.FunctionDef:
+    """
+    Get the given function from the given module.
+    """
+    visitor = GetFunction(name)
+    visitor.visit(module)
+    if visitor.result is not None:
+        return visitor.result
+    else:
+        raise ValueError(f"Function {name} not found")
+
+class SubstituteVariables(ast.NodeTransformer):
+    """
+    Transformation to replace a set of variable references to another.
+    """
+    def __init__(self, mapping: Dict[str, str]) -> None:
+        self.mapping: Dict[str, str] = mapping
+
+    def visit_Name(self, node: ast.Name) -> Any:
+        # Replace id if a mapping for it exists.
+        return ast.Name(id=self.mapping.get(node.id, node.id), ctx=node.ctx)
+
+class SubstituteVariablesExpr(ast.NodeTransformer):
+    """
+    Transformation to replace a set of variable references with arbitrary
+    expressions.
+    """
+    def __init__(self, mapping: Dict[str, ast.expr]) -> None:
+        for v in mapping.values():
+            assert isinstance(v, ast.expr)
+        self.mapping: Dict[str, ast.expr] = mapping
+
+    def visit_Name(self, node: ast.Name) -> Any:
+        # If mapping exists, return it; otherwise return the same node.
+        return self.mapping.get(node.id, node)
+
+def generate_step(step: Tuple[str, str], module: ast.Module) -> List[ast.stmt]:
+    assert isinstance(step, tuple)
+
+    template_function: ast.FunctionDef = get_function("template_create_step", module)
+
+    # Check that the template's arguments haven't been changed
+    reference_def = ast.parse("def template_create_step(factory, name: str, command: str) -> None: pass").body[0]
+    assert isinstance(reference_def, ast.FunctionDef)
+    if astor.to_source(template_function.args) != astor.to_source(reference_def.args):
+        raise ValueError(f"template_create_step's arguments have been changed! Got {astor.to_source(template_function.args)} instead of {astor.to_source(reference_def.args)}")
+
+    # Substitute name and command
+    # deepcopy functions since the transformer will modify the source tree
+    substituted_func = SubstituteVariablesExpr({
+        "name": ast.Str(step[0]),
+        "command": ast.Str(step[1])
+    }).visit(copy.deepcopy(template_function))
+
+    # Return body of method
+    body = substituted_func.body
+    for n in body:
+        assert isinstance(n, ast.stmt)
+    return body
+
+def generate_builder(builder: Builder):
+    pass
+
 
 class MyPass(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
@@ -22,6 +103,7 @@ class MyPass(ast.NodeTransformer):
 
 # ~ tree = MyPass().visit(tree)
 
+
 def parse_template_tree() -> ast.Module:
     with open("master-template.py", 'r') as f:
         template_str = str(f.read())
@@ -29,11 +111,26 @@ def parse_template_tree() -> ast.Module:
     tree = ast.parse(template_str)
     return tree
 
+
 def main(args) -> int:
+    # Load template
     tree = parse_template_tree()
 
-    print(astor.to_source(tree, indent_with="  "))
+    # Load config
+    config = BuildbotConfig.from_filename(args[1])
+
+    # Generate new methods
+    for step in config.builders[0].steps:
+        for l in generate_step(step, tree):
+            print(astor.to_source(l))
+
+    # Substitute dummy methods
+
+    # Remove templates
+
+    # ~ print(astor.to_source(tree, indent_with="  "))
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
