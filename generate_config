@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+#  generate_config
+#  Generate a master.cfg for buildbot based on a JSON/YAML configuration.
+
+import ast
+import astor
+import sys
+
+from ezbuildbot_config import *
+
+# 0.5 is not compatible with Python >3.5
+astor_version = astor.__version__.split(".")
+assert int(astor_version[0]) >= 0 and int(astor_version[1]) > 5, "requires astor version 0.6 or higher"
+
+class MyPass(ast.NodeTransformer):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        print(astor.to_source(node))
+        print(repr(node.name))
+        return node
+
+# ~ tree = MyPass().visit(tree)
+
+def parse_template_tree() -> ast.Module:
+    with open("master-template.py", 'r') as f:
+        template_str = str(f.read())
+
+    tree = ast.parse(template_str)
+    return tree
+
+def main(args) -> int:
+    tree = parse_template_tree()
+
+    print(astor.to_source(tree, indent_with="  "))
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))
