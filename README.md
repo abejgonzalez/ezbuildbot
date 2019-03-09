@@ -20,5 +20,8 @@ First ensure the following environment variables are set:
 The following scripts build/set up various images and instances:
 * `build-buildbot`: Build the buildbot base images (required for other commands).
 * `start-master`: Re-starts the master instance. Usually it is preferred to use this command after changing the configuration since it will rebuild the image (required for changes to take effect) before re-running it.
-** `build-master`: Re-builds the master image.
-** `run-master`: Re-run the master instance from the master image but does NOT rebuild the image.
+  * `build-master`: Re-builds the master image.
+  * `run-master`: Re-run the master instance from the master image but does NOT rebuild the image.
+* `start-worker`: Re-starts a worker instance. It takes two parameters, a worker name and password.
+  * `build-worker`: Re-builds the worker image.
+  * `run-worker`: Re-run a worker instance using parameters (see above).
