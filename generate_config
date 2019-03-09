@@ -8,7 +8,8 @@ import ast
 import astor
 import copy
 import sys
-from typing import Optional
+from functools import reduce
+from typing import cast, Optional
 
 from ezbuildbot_config import *
 
@@ -78,7 +79,8 @@ def check_signature(sig: str, func: ast.FunctionDef) -> None:
     if astor.to_source(func.args) != astor.to_source(reference_def.args):
         raise ValueError(f"The function signature is incorrect - got {astor.to_source(func.args)} instead of {astor.to_source(reference_def.args)}")
 
-def generate_step(step: Tuple[str, str], module: ast.Module) -> List[ast.stmt]:
+def generate_step(factory: ast.expr, step: Tuple[str, str], module: ast.Module) -> List[ast.stmt]:
+    assert isinstance(factory, ast.expr)
     assert isinstance(step, tuple)
 
     template_function: ast.FunctionDef = get_function("template_create_step", module)
@@ -88,6 +90,7 @@ def generate_step(step: Tuple[str, str], module: ast.Module) -> List[ast.stmt]:
     # Substitute name and command
     # deepcopy functions since the transformer will modify the source tree
     substituted_func = SubstituteVariablesExpr({
+        "factory": factory,
         "name": ast.Str(step[0]),
         "command": ast.Str(step[1])
     }).visit(copy.deepcopy(template_function))
@@ -98,9 +101,35 @@ def generate_step(step: Tuple[str, str], module: ast.Module) -> List[ast.stmt]:
         assert isinstance(n, ast.stmt)
     return body
 
-def generate_builder(builder: Builder):
-    pass
+def generate_builder(builder: Builder, module: ast.Module):
+    template_function: ast.FunctionDef = get_function("template_create_builder", module)
 
+    check_signature("def template_create_builder(name: str, repourl: str, workernames: List[str]): pass", template_function)
+
+    class ReplaceSteps(ast.NodeTransformer):
+        def visit_Expr(self, node: ast.Expr) -> Any:
+            # We are trying to replace something like
+            # Expr(value=Call(func=Name(id='template_create_step_placeholder')))
+            if not isinstance(node.value, ast.Call):
+                return node
+            call = cast(ast.Call, node.value)
+
+            if not isinstance(call.func, ast.Name):
+                return node
+            func = cast(ast.Name, call.func)
+
+            if not func.id == "template_create_step_placeholder":
+                return node
+
+            # Get the first arg as it is the factory name
+            factory = call.args[0]
+
+            # Generate steps
+            return reduce(lambda x, y: x + y, map(lambda step: generate_step(factory, step, module), builder.steps))
+
+    substituted_func = ReplaceSteps().visit(copy.deepcopy(template_function))
+
+    return substituted_func
 
 class MyPass(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
@@ -127,11 +156,10 @@ def main(args) -> int:
     config = BuildbotConfig.from_filename(args[1])
 
     # Generate new methods
-    for step in config.builders[0].steps:
-        for l in generate_step(step, tree):
-            print(astor.to_source(l))
+    print(astor.to_source(generate_builder(config.builders[0], tree)))
 
     # Substitute dummy methods
+    
 
     # Remove templates
 
