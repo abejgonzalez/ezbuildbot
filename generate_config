@@ -43,10 +43,40 @@ def get_function(name: str, module: ast.Module) -> ast.FunctionDef:
     else:
         raise ValueError(f"Function {name} not found")
 
+
+def parse_const_from_object(obj: Any) -> ast.expr:
+    """
+    Parse a single Python constant into an expr.
+    e.g. "15" or "[1, 2, 3]"
+    """
+    body = ast.parse(repr(obj)).body
+    assert len(body) == 1
+    assert isinstance(body[0], ast.Expr)
+    return body[0].value
+
+
+def sanitize_name(name: str) -> str:
+    """
+    Sanitize the given name so that it can be a Python identifier.
+    """
+    # No empty names
+    if name == "":
+        return "empty_"
+
+    # No dashes
+    name = name.replace('-', '_')
+
+    # No leading digits
+    if name.isdigit() or name[0].isdigit():
+        return "_" + name
+
+    return name
+
 class SubstituteVariables(ast.NodeTransformer):
     """
     Transformation to replace a set of variable references to another.
     """
+
     def __init__(self, mapping: Dict[str, str]) -> None:
         self.mapping: Dict[str, str] = mapping
 
@@ -54,11 +84,13 @@ class SubstituteVariables(ast.NodeTransformer):
         # Replace id if a mapping for it exists.
         return ast.Name(id=self.mapping.get(node.id, node.id), ctx=node.ctx)
 
+
 class SubstituteVariablesExpr(ast.NodeTransformer):
     """
     Transformation to replace a set of variable references with arbitrary
     expressions.
     """
+
     def __init__(self, mapping: Dict[str, ast.expr]) -> None:
         for v in mapping.values():
             assert isinstance(v, ast.expr)
@@ -67,6 +99,7 @@ class SubstituteVariablesExpr(ast.NodeTransformer):
     def visit_Name(self, node: ast.Name) -> Any:
         # If mapping exists, return it; otherwise return the same node.
         return self.mapping.get(node.id, node)
+
 
 def check_signature(sig: str, func: ast.FunctionDef) -> None:
     """
@@ -77,15 +110,19 @@ def check_signature(sig: str, func: ast.FunctionDef) -> None:
     assert isinstance(reference_def, ast.FunctionDef)
 
     if astor.to_source(func.args) != astor.to_source(reference_def.args):
-        raise ValueError(f"The function signature is incorrect - got {astor.to_source(func.args)} instead of {astor.to_source(reference_def.args)}")
+        raise ValueError(
+            f"The function signature is incorrect - got {astor.to_source(func.args)} instead of {astor.to_source(reference_def.args)}")
+
 
 def generate_step(factory: ast.expr, step: Tuple[str, str], module: ast.Module) -> List[ast.stmt]:
     assert isinstance(factory, ast.expr)
     assert isinstance(step, tuple)
 
-    template_function: ast.FunctionDef = get_function("template_create_step", module)
+    template_function: ast.FunctionDef = get_function(
+        "template_create_step", module)
 
-    check_signature("def template_create_step(factory, name: str, command: str) -> None: pass", template_function)
+    check_signature(
+        "def template_create_step(factory, name: str, command: str) -> None: pass", template_function)
 
     # Substitute name and command
     # deepcopy functions since the transformer will modify the source tree
@@ -101,10 +138,19 @@ def generate_step(factory: ast.expr, step: Tuple[str, str], module: ast.Module) 
         assert isinstance(n, ast.stmt)
     return body
 
-def generate_builder(builder: Builder, module: ast.Module):
-    template_function: ast.FunctionDef = get_function("template_create_builder", module)
 
-    check_signature("def template_create_builder(name: str, repourl: str, workernames: List[str]): pass", template_function)
+def generate_builder(builder: Builder, module: ast.Module) -> ast.FunctionDef:
+    """
+    Return a function that takes no arguments and returns a builder.
+    """
+    template_function: ast.FunctionDef = get_function(
+        "template_create_builder", module)
+
+    check_signature(
+        "def template_create_builder(name: str, repourl: str, workernames: List[str]): pass", template_function)
+
+    # TODO(edwardw): replace this
+    workernames = ["worker", "names", "here"]
 
     class ReplaceSteps(ast.NodeTransformer):
         def visit_Expr(self, node: ast.Expr) -> Any:
@@ -128,8 +174,21 @@ def generate_builder(builder: Builder, module: ast.Module):
             return reduce(lambda x, y: x + y, map(lambda step: generate_step(factory, step, module), builder.steps))
 
     substituted_func = ReplaceSteps().visit(copy.deepcopy(template_function))
+    # Also replace the variables.
+    SubstituteVariablesExpr({
+        "name": ast.Str(builder.name),
+        "repourl": ast.Str(builder.git_url),
+        "workernames": parse_const_from_object(workernames)
+    }).visit(substituted_func)
 
-    return substituted_func
+    # Return a new function with no arguments
+    return ast.FunctionDef(
+        name=f"get_builder_{sanitize_name(builder.name)}",
+        args=ast.arguments(args=[], vararg=None, kwonlyargs=[], kwarg=None, defaults=[], kw_defaults=[]),
+        body=substituted_func.body,
+        decorator_list=[],
+        returns=None)
+
 
 class MyPass(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
@@ -159,7 +218,6 @@ def main(args) -> int:
     print(astor.to_source(generate_builder(config.builders[0], tree)))
 
     # Substitute dummy methods
-    
 
     # Remove templates
 
