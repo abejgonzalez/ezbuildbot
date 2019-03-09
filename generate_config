@@ -67,16 +67,23 @@ class SubstituteVariablesExpr(ast.NodeTransformer):
         # If mapping exists, return it; otherwise return the same node.
         return self.mapping.get(node.id, node)
 
+def check_signature(sig: str, func: ast.FunctionDef) -> None:
+    """
+    Check that the signature of the function matches the one given as a
+    string.
+    """
+    reference_def = ast.parse(sig).body[0]
+    assert isinstance(reference_def, ast.FunctionDef)
+
+    if astor.to_source(func.args) != astor.to_source(reference_def.args):
+        raise ValueError(f"The function signature is incorrect - got {astor.to_source(func.args)} instead of {astor.to_source(reference_def.args)}")
+
 def generate_step(step: Tuple[str, str], module: ast.Module) -> List[ast.stmt]:
     assert isinstance(step, tuple)
 
     template_function: ast.FunctionDef = get_function("template_create_step", module)
 
-    # Check that the template's arguments haven't been changed
-    reference_def = ast.parse("def template_create_step(factory, name: str, command: str) -> None: pass").body[0]
-    assert isinstance(reference_def, ast.FunctionDef)
-    if astor.to_source(template_function.args) != astor.to_source(reference_def.args):
-        raise ValueError(f"template_create_step's arguments have been changed! Got {astor.to_source(template_function.args)} instead of {astor.to_source(reference_def.args)}")
+    check_signature("def template_create_step(factory, name: str, command: str) -> None: pass", template_function)
 
     # Substitute name and command
     # deepcopy functions since the transformer will modify the source tree
