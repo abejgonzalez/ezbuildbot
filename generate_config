@@ -9,7 +9,7 @@ import astor
 import copy
 import sys
 from functools import reduce
-from typing import cast, Optional
+from typing import cast, Optional, Set
 
 from ezbuildbot_config import *
 
@@ -111,6 +111,21 @@ class SubstituteVariablesExpr(ast.NodeTransformer):
     def visit_Name(self, node: ast.Name) -> Any:
         # If mapping exists, return it; otherwise return the same node.
         return self.mapping.get(node.id, node)
+
+
+class RemoveFunction(ast.NodeTransformer):
+    """
+    Transformation that removes a set of functions.
+    """
+
+    def __init__(self, functions: Set[str]) -> None:
+        self.functions: Set[str] = functions
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        if node.name in self.functions:
+            return None
+        else:
+            return node
 
 
 def check_signature(sig: str, func: ast.FunctionDef) -> None:
@@ -215,13 +230,13 @@ def generate_get_builders(config: BuildbotConfig, module: ast.Module) -> ast.Fun
         map(lambda builder: generate_builder(builder, module), config.builders))
 
     # Create a return expression for an array of these functions
-    return_expr = ast.Return(value=ast.List(
+    return_expr: ast.stmt = ast.Return(value=ast.List(
         elts=list(map(lambda f: ast.Call(func=ast.Name(id=f.name),
-                                     args=[], keywords=[]), builder_functions))
+                                         args=[], keywords=[]), builder_functions))
     ))
 
     # Add new function body
-    function.body = builder_functions + [return_expr]
+    function.body = cast(List[ast.stmt], builder_functions) + [return_expr]
 
     return function
 
@@ -236,19 +251,23 @@ def parse_template_tree() -> ast.Module:
 
 def main(args) -> int:
     # Load template
-    tree = parse_template_tree()
+    code = parse_template_tree()
 
     # Load config
     config = BuildbotConfig.from_filename(args[1])
 
     # Generate new methods
-    print(astor.to_source(generate_get_builders(config, tree)))
+    print(astor.to_source(generate_get_builders(config, code)))
 
     # Substitute dummy methods
 
     # Remove templates
+    code = RemoveFunction({
+        'template_create_step',
+        'template_create_builder'
+    }).visit(copy.deepcopy(code))
 
-    # ~ print(astor.to_source(tree, indent_with="  "))
+    print(astor.to_source(code, indent_with="  "))
     return 0
 
 
