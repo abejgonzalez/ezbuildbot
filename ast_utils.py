@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 #  ast_utils.py
@@ -9,6 +9,8 @@
 import ast
 import astor
 from typing import Any, Dict, Optional, Set
+
+# TODO(edwardw): write unit tests for everything in this file
 
 
 class GetFunction(ast.NodeVisitor):
