@@ -107,14 +107,8 @@ def generate_get_builders(config: BuildbotConfig, module: ast.Module) -> ast.Fun
     builder_functions = list(
         map(lambda builder: generate_builder(builder, workernames, module), config.builders))
 
-    # Create a return expression for an array of these functions
-    return_expr: ast.stmt = ast.Return(value=ast.List(
-        elts=list(map(lambda f: ast.Call(func=ast.Name(id=f.name),
-                                         args=[], keywords=[]), builder_functions))
-    ))
-
     # Add new function body
-    function.body = cast(List[ast.stmt], builder_functions) + [return_expr]
+    function.body = create_aggregating_function_body(builder_functions)
 
     return function
 
@@ -189,14 +183,8 @@ def generate_get_github_incoming_webhooks(config: BuildbotConfig, module: ast.Mo
     webhook_functions = list(
         map(lambda webhook: generate_incoming_webhook(webhook, module), config.github_incoming_webhooks))
 
-    # Create a return expression for an array of these functions
-    return_expr: ast.stmt = ast.Return(value=ast.List(
-        elts=list(map(lambda f: ast.Call(func=ast.Name(id=f.name),
-                                         args=[], keywords=[]), webhook_functions))
-    ))
-
     # Add new function body
-    function.body = cast(List[ast.stmt], webhook_functions) + [return_expr]
+    function.body = create_aggregating_function_body(webhook_functions)
 
     return function
 

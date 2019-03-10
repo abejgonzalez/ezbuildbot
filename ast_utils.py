@@ -9,7 +9,7 @@
 import ast
 import astor
 import copy
-from typing import Any, Dict, List, Optional, Set
+from typing import cast, Any, Dict, List, Optional, Set
 
 # TODO(edwardw): write unit tests for everything in this file
 
@@ -182,3 +182,25 @@ def apply_templated_function_with_return(template: ast.FunctionDef, signature: s
         body=new_body,
         decorator_list=[],
         returns=None)
+
+
+def create_aggregating_function_body(subfunctions: List[ast.FunctionDef]) -> List[ast.stmt]:
+    """
+    Create a function body that aggregates together many subfunctions
+    which take no arguments.
+    For example, if subfunctions defines foo() and bar(), this returns a
+    body along these lines:
+
+    def foo():
+      ...
+    def bar():
+      ...
+    return [foo(), bar()]
+    """
+    # Create a return expression for an array of these functions
+    return_expr: ast.stmt = ast.Return(value=ast.List(
+        elts=list(map(lambda f: ast.Call(func=ast.Name(id=f.name),
+                                         args=[], keywords=[]), subfunctions))
+    ))
+
+    return cast(List[ast.stmt], subfunctions) + [return_expr]
