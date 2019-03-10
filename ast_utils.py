@@ -8,7 +8,8 @@
 
 import ast
 import astor
-from typing import Any, Dict, Optional, Set
+import copy
+from typing import Any, Dict, List, Optional, Set
 
 # TODO(edwardw): write unit tests for everything in this file
 
@@ -145,3 +146,39 @@ def check_signature(sig: str, func: ast.FunctionDef) -> None:
     if astor.to_source(func.args) != astor.to_source(reference_def.args):
         raise ValueError(
             f"The function signature is incorrect - got {astor.to_source(func.args)} instead of {astor.to_source(reference_def.args)}")
+
+
+def apply_templated_function_with_return(template: ast.FunctionDef, signature: str, arguments: Dict[str, Any], new_name: str) -> ast.FunctionDef:
+    """
+    Apply a templated function and return a function with a new name and
+    no arguments.
+    :param template: Function to use as template
+    :param signature: Check that this function signature matches
+    :param arguments: Arguments to substitute
+    :param new_name: New function name
+    :return: New function
+    """
+    assert isinstance(template, ast.FunctionDef)
+    assert isinstance(signature, str)
+    assert isinstance(new_name, str)
+
+    check_signature(signature, template)
+
+    # Create ast.expr for arguments
+    arguments = dict(
+        map(lambda kv: (kv[0], parse_const_from_object(kv[1])), arguments.items()))
+
+    new_template = SubstituteVariablesExpr(
+        arguments).visit(copy.deepcopy(template))
+
+    new_body: List[ast.stmt] = new_template.body
+
+    # Return a new function with no arguments
+    return ast.FunctionDef(
+        name=new_name,
+        # No arguments
+        args=ast.arguments(args=[], vararg=None, kwonlyargs=[],
+                           kwarg=None, defaults=[], kw_defaults=[]),
+        body=new_body,
+        decorator_list=[],
+        returns=None)

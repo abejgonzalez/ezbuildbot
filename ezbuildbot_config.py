@@ -45,9 +45,15 @@ class Worker(NamedTuple):
 
 
 class GitHubIncomingWebhook(NamedTuple):
+    """
+    Represents a GitHub PR webhook configuration.
+    """
+
     name: str
     description: str
     builders: List[str]
+    # In the GitHub hook, the project is the github project name.
+    # e.g. "ucb-bar/hammer"
     filter_project: Optional[str]
 
     @staticmethod

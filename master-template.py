@@ -26,6 +26,13 @@ def get_workers() -> list:
   """
   pass
 
+def get_github_incoming_webhooks() -> list:
+  """
+  Get the list of GitHub incoming webhooks for this buildbot.
+  This method will be replaced by ./generate_config.
+  """
+  pass
+
 ########################################################################
 # These lines are template lines used by generate_config to generate
 # buildbot lines.
@@ -53,6 +60,16 @@ def template_create_builder(name: str, repourl: str, workernames: List[str]):
 def template_create_worker(name: str, password: str) -> None:
   worker.Worker(name, password)
 
+def template_github_incoming_webhook(name: str, reason: str, builders: List[str], filter_project: Optional[str]):
+  return schedulers.AnyBranchScheduler(
+    name = name,
+    reason = reason,
+    builderNames = builders,
+    change_filter = util.ChangeFilter(
+      project=filter_project
+    ) if filter_project is not None else None
+  )
+
 ########################################################################
 # No need to modify the lines below this.
 ########################################################################
@@ -67,10 +84,12 @@ c['workers'] = get_workers()
 # Builders
 c['builders'] = get_builders()
 
-# Force build scheduler
-c['schedulers'] = [schedulers.ForceScheduler(
-                            name="force",
-                            builderNames=["runtests"])]
+# Schedulers
+c['schedulers'] = [
+  schedulers.ForceScheduler(name="force",
+                            builderNames=["runtests"])
+]
+c['schedulers'] += get_github_incoming_webhooks()
 
 # Services for status/comment reporting, etc.
 c['services'] = []

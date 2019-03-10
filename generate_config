@@ -158,6 +158,49 @@ def generate_get_workers(config: BuildbotConfig, module: ast.Module) -> ast.Func
     return function
 
 
+def generate_incoming_webhook(webhook: GitHubIncomingWebhook, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate a function that creates an incoming webhook.
+    """
+    function = get_function("template_github_incoming_webhook", module)
+
+    return apply_templated_function_with_return(
+        template=function,
+        signature="def template_github_incoming_webhook(name: str, reason: str, builders: List[str], filter_project: Optional[str]): ...",
+        arguments={
+            "name": webhook.name,
+            "description": webhook.description,
+            "builders": webhook.builders,
+            "filter_project": webhook.filter_project
+        },
+        new_name=f"get_{sanitize_name(webhook.name)}"
+    )
+
+
+
+def generate_get_github_incoming_webhooks(config: BuildbotConfig, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate the get_github_incoming_webhooks() function.
+    """
+    function: ast.FunctionDef = copy.deepcopy(
+        get_function("get_github_incoming_webhooks", module))
+
+    # Get all the sub functions
+    webhook_functions = list(
+        map(lambda webhook: generate_incoming_webhook(webhook, module), config.github_incoming_webhooks))
+
+    # Create a return expression for an array of these functions
+    return_expr: ast.stmt = ast.Return(value=ast.List(
+        elts=list(map(lambda f: ast.Call(func=ast.Name(id=f.name),
+                                         args=[], keywords=[]), webhook_functions))
+    ))
+
+    # Add new function body
+    function.body = cast(List[ast.stmt], webhook_functions) + [return_expr]
+
+    return function
+
+
 def parse_template_tree(filename: str) -> ast.Module:
     with open(filename, 'r') as f:
         template_str = str(f.read())
@@ -176,14 +219,16 @@ def main(args) -> int:
     # Generate and substitute dummy methods
     code = ReplaceFunction({
         'get_builders': generate_get_builders(config, code),
-        'get_workers': generate_get_workers(config, code)
+        'get_workers': generate_get_workers(config, code),
+        'get_github_incoming_webhooks': generate_get_github_incoming_webhooks(config, code)
     }).visit(copy.deepcopy(code))
 
     # Remove templates
     code = RemoveFunction({
         'template_create_step',
         'template_create_builder',
-        'template_create_worker'
+        'template_create_worker',
+        'template_github_incoming_webhook'
     }).visit(copy.deepcopy(code))
 
     print(astor.to_source(code, indent_with="  "))
