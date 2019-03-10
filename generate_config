@@ -265,6 +265,21 @@ def generate_get_github_change_hook_dialect(config: BuildbotConfig, module: ast.
     )
 
 
+def generate_get_hostname(config: BuildbotConfig, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate a function that creates a GitHub status or comment push
+    depending on the argument.
+    """
+    function_template = get_function("get_hostname", module)
+
+    newfunc = ast.parse(f"""
+def get_hostname() -> str:
+    return {repr(config.hostname)}
+    """).body[0]
+    assert isinstance(newfunc, ast.FunctionDef)
+
+    return newfunc
+
 def parse_template_tree(filename: str) -> ast.Module:
     with open(filename, 'r') as f:
         template_str = str(f.read())
@@ -286,7 +301,8 @@ def main(args) -> int:
         'get_workers': generate_get_workers(config, code),
         'get_github_incoming_webhooks': generate_get_github_incoming_webhooks(config, code),
         'get_github_status_comment_pushes': generate_get_github_status_comment_pushes(config, code),
-        'get_github_change_hook_dialect': generate_get_github_change_hook_dialect(config, code)
+        'get_github_change_hook_dialect': generate_get_github_change_hook_dialect(config, code),
+        'get_hostname': generate_get_hostname(config, code)
     }).visit(copy.deepcopy(code))
 
     # Remove templates
