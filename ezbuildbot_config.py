@@ -112,7 +112,7 @@ class BuildbotConfig:
         self._builders = list(map(Builder.from_dict, raw['builders']))
         self._workers = list(map(Worker.from_dict, raw['workers']))
 
-        self.hostname: Optional[str] = "localhost" if 'hostname' not in raw else str(
+        self.hostname: str = "localhost" if 'hostname' not in raw else str(
             raw['hostname'])
         self.github_webhook_secret: Optional[str] = None if 'github_webhook_secret' not in raw else str(
             raw['github_webhook_secret'])
