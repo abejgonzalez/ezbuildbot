@@ -45,7 +45,7 @@ def generate_step(factory: ast.expr, step: Tuple[str, str], module: ast.Module) 
     return body
 
 
-def generate_builder(builder: Builder, module: ast.Module) -> ast.FunctionDef:
+def generate_builder(builder: Builder, workernames: List[str], module: ast.Module) -> ast.FunctionDef:
     """
     Return a function that takes no arguments and returns a builder.
     """
@@ -54,9 +54,6 @@ def generate_builder(builder: Builder, module: ast.Module) -> ast.FunctionDef:
 
     check_signature(
         "def template_create_builder(name: str, repourl: str, workernames: List[str]): pass", template_function)
-
-    # TODO(edwardw): replace this
-    workernames = ["worker", "names", "here"]
 
     class ReplaceSteps(ast.NodeTransformer):
         def visit_Expr(self, node: ast.Expr) -> Any:
@@ -104,9 +101,11 @@ def generate_get_builders(config: BuildbotConfig, module: ast.Module) -> ast.Fun
     function: ast.FunctionDef = copy.deepcopy(
         get_function("get_builders", module))
 
+    workernames = list(map(lambda worker: worker.name, config.workers))
+
     # Get all the builder functions
     builder_functions = list(
-        map(lambda builder: generate_builder(builder, module), config.builders))
+        map(lambda builder: generate_builder(builder, workernames, module), config.builders))
 
     # Create a return expression for an array of these functions
     return_expr: ast.stmt = ast.Return(value=ast.List(
