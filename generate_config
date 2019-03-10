@@ -171,7 +171,6 @@ def generate_incoming_webhook(webhook: GitHubIncomingWebhook, module: ast.Module
     )
 
 
-
 def generate_get_github_incoming_webhooks(config: BuildbotConfig, module: ast.Module) -> ast.FunctionDef:
     """
     Generate the get_github_incoming_webhooks() function.
@@ -185,6 +184,66 @@ def generate_get_github_incoming_webhooks(config: BuildbotConfig, module: ast.Mo
 
     # Add new function body
     function.body = create_aggregating_function_body(webhook_functions)
+
+    return function
+
+
+def generate_github_status_comment_push(function: str, signature: str, push: GitHubStatusCommentPush, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate a function that creates a GitHub status or comment push
+    depending on the argument.
+    """
+    function_template = get_function(function, module)
+
+    return apply_templated_function_with_return(
+        template=function_template,
+        signature=signature,
+        arguments={
+            "token": push.token,
+            "context": push.context,
+            "builders": push.builders
+        },
+        new_name=f"get_{function}_{sanitize_name(str(hash(push)))}"
+    )
+
+
+def generate_github_comment_push(push: GitHubStatusCommentPush, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate a function that creates a GitHub comment push.
+    """
+    return generate_github_status_comment_push(
+        function="template_github_comment_push",
+        signature="def template_github_comment_push(token: str, context: str, builders: List[str]): ...",
+        push=push,
+        module=module
+    )
+
+
+def generate_github_status_push(push: GitHubStatusCommentPush, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate a function that creates a GitHub status push.
+    """
+    return generate_github_status_comment_push(
+        function="template_github_status_push",
+        signature="def template_github_status_push(token: str, context: str, builders: List[str]): ...",
+        push=push,
+        module=module
+    )
+
+
+def generate_get_github_status_comment_pushes(config: BuildbotConfig, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate the get_github_status_comment_pushes() function.
+    """
+    function: ast.FunctionDef = copy.deepcopy(
+        get_function("get_github_status_comment_pushes", module))
+
+    # Get all the sub functions
+    status_functions = list(map(lambda push: generate_github_status_push(push, module), config.github_status_pushes))
+    comment_functions = list(map(lambda push: generate_github_comment_push(push, module), config.github_comment_pushes))
+
+    # Add new function body
+    function.body = create_aggregating_function_body(status_functions + comment_functions)
 
     return function
 
@@ -208,7 +267,8 @@ def main(args) -> int:
     code = ReplaceFunction({
         'get_builders': generate_get_builders(config, code),
         'get_workers': generate_get_workers(config, code),
-        'get_github_incoming_webhooks': generate_get_github_incoming_webhooks(config, code)
+        'get_github_incoming_webhooks': generate_get_github_incoming_webhooks(config, code),
+        'get_github_status_comment_pushes': generate_get_github_status_comment_pushes(config, code)
     }).visit(copy.deepcopy(code))
 
     # Remove templates
@@ -216,7 +276,9 @@ def main(args) -> int:
         'template_create_step',
         'template_create_builder',
         'template_create_worker',
-        'template_github_incoming_webhook'
+        'template_github_incoming_webhook',
+        'template_github_comment_push',
+        'template_github_status_push'
     }).visit(copy.deepcopy(code))
 
     print(astor.to_source(code, indent_with="  "))

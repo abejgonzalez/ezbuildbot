@@ -88,6 +88,12 @@ class GitHubStatusCommentPush(NamedTuple):
             builders=builders
         )
 
+    def __hash__(self):
+        # Work around the non-hashable list
+        # This is used a temporary name when generating functions since
+        # this class doesn't have a name.
+        return hash(str(self._asdict()))
+
 
 class BuildbotConfig:
     """

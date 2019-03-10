@@ -33,6 +33,13 @@ def get_github_incoming_webhooks() -> list:
   """
   pass
 
+def get_github_status_comment_pushes() -> list:
+  """
+  Get the list of GitHub-related buildbot services.
+  This method will be replaced by ./generate_config.
+  """
+  pass
+
 ########################################################################
 # These lines are template lines used by generate_config to generate
 # buildbot lines.
@@ -70,6 +77,22 @@ def template_github_incoming_webhook(name: str, reason: str, builders: List[str]
     ) if filter_project is not None else None
   )
 
+def template_github_comment_push(token: str, context: str, builders: List[str]):
+  return reporters.GitHubCommentPush(token=token,
+                                 context=context,
+                                 postURLs=False,
+                                 startDescription='Build started.',
+                                 endDescription='Build done.',
+                                 builders=builders)
+
+def template_github_status_push(token: str, context: str, builders: List[str]):
+  return reporters.GitHubStatusPush(token=token,
+                                 context=context,
+                                 postURLs=False,
+                                 startDescription='Build started.',
+                                 endDescription='Build done.',
+                                 builders=builders)
+
 ########################################################################
 # No need to modify the lines below this.
 ########################################################################
@@ -93,6 +116,7 @@ c['schedulers'] += get_github_incoming_webhooks()
 
 # Services for status/comment reporting, etc.
 c['services'] = []
+c['services'] += get_github_status_comment_pushes()
 
 # Add buildbot communication port
 c['protocols'] = {'pb': {'port': BUILDBOT_COMMS_PORT}}
