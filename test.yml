@@ -12,3 +12,21 @@ builders:
 workers:
 - name: "testworker"
   password: "testpassword"
+
+github_webhook_secret: "my_webhook_secret"
+
+github_incoming_webhooks:
+- name: "incoming-webhook"
+  description: "PR webhooks from GitHub"
+  builders: ["myrepo-build"]
+  filter_project: "myorg/myrepo"
+
+github_status_pushes:
+- token: "MY_SECRET_TOKEN"
+  context: "buildbot"
+  builders: ["myrepo-build"]
+
+github_comment_pushes:
+- token: "MY_SECRET_TOKEN"
+  context: "buildbot"
+  builders: ["myrepo-build"]

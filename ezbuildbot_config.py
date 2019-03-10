@@ -4,7 +4,7 @@
 #  ezbuildbot_config.py
 #  Configuration classes for the ezbuildbot configuration.
 
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 import os
 import json
 import yaml
@@ -44,6 +44,45 @@ class Worker(NamedTuple):
         )
 
 
+class GitHubIncomingWebhook(NamedTuple):
+    name: str
+    description: str
+    builders: List[str]
+    filter_project: Optional[str]
+
+    @staticmethod
+    def from_dict(in_dict: Dict[str, Any]) -> "GitHubIncomingWebhook":
+        builders = list(in_dict['builders'])
+        for b in builders:
+            assert isinstance(b, str)
+        filter_project: Optional[str] = None
+        if 'filter_project' in in_dict:
+            filter_project = str(in_dict['filter_project'])
+        return GitHubIncomingWebhook(
+            name=str(in_dict['name']),
+            description=str(in_dict['description']),
+            builders=builders,
+            filter_project=filter_project
+        )
+
+
+class GitHubStatusCommentPush(NamedTuple):
+    token: str
+    context: str
+    builders: List[str]
+
+    @staticmethod
+    def from_dict(in_dict: Dict[str, Any]) -> "GitHubStatusCommentPush":
+        builders = list(in_dict['builders'])
+        for b in builders:
+            assert isinstance(b, str)
+        return GitHubStatusCommentPush(
+            token=str(in_dict['token']),
+            context=str(in_dict['context']),
+            builders=builders
+        )
+
+
 class BuildbotConfig:
     """
     Represents a buildbot config.
@@ -61,6 +100,16 @@ class BuildbotConfig:
         self._builders = list(map(Builder.from_dict, raw['builders']))
         self._workers = list(map(Worker.from_dict, raw['workers']))
 
+        self.github_webhook_secret: Optional[str] = None if 'github_webhook_secret' not in raw else str(
+            raw['github_webhook_secret'])
+
+        self._github_incoming_webhooks = list(
+            map(GitHubIncomingWebhook.from_dict, raw['github_incoming_webhooks']))
+        self._github_status_pushes = list(
+            map(GitHubStatusCommentPush.from_dict, raw['github_status_pushes']))
+        self._github_comment_pushes = list(
+            map(GitHubStatusCommentPush.from_dict, raw['github_comment_pushes']))
+
     @property
     def builders(self) -> List[Builder]:
         return self._builders
@@ -68,6 +117,18 @@ class BuildbotConfig:
     @property
     def workers(self) -> List[Worker]:
         return self._workers
+
+    @property
+    def github_incoming_webhooks(self) -> List[GitHubIncomingWebhook]:
+        return self._github_incoming_webhooks
+
+    @property
+    def github_status_pushes(self) -> List[GitHubStatusCommentPush]:
+        return self._github_status_pushes
+
+    @property
+    def github_comment_pushes(self) -> List[GitHubStatusCommentPush]:
+        return self._github_comment_pushes
 
     @staticmethod
     def from_filename(filename: str) -> "BuildbotConfig":

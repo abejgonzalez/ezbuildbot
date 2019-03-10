@@ -44,6 +44,43 @@ class BuildbotConfigTest(unittest.TestCase):
         self.assertEqual(config.workers[0].name, "testworker")
         self.assertEqual(config.workers[0].password, "testpassword")
 
+    def test_github_webhook_secret(self) -> None:
+        """
+        Test that github_webhook_secret is parsed correctly.
+        """
+        config = BuildbotConfig(self.sample_config_str, is_yaml=True)
+        self.assertEqual(config.github_webhook_secret, "my_webhook_secret")
+
+    def test_github_incoming_webhooks(self) -> None:
+        """
+        Test that GitHub incoming webhooks are parsed correctly.
+        """
+        config = BuildbotConfig(self.sample_config_str, is_yaml=True)
+        self.assertEqual(len(config.github_incoming_webhooks), 1)
+        self.assertEqual(config.github_incoming_webhooks[0].name, "incoming-webhook")
+        self.assertEqual(config.github_incoming_webhooks[0].description, "PR webhooks from GitHub")
+        self.assertEqual(config.github_incoming_webhooks[0].builders, ["myrepo-build"])
+        self.assertEqual(config.github_incoming_webhooks[0].filter_project, "myorg/myrepo")
+
+    def test_github_status_pushes(self) -> None:
+        """
+        Test that GitHub status pushes are parsed correctly.
+        """
+        config = BuildbotConfig(self.sample_config_str, is_yaml=True)
+        self.assertEqual(len(config.github_status_pushes), 1)
+        self.assertEqual(config.github_status_pushes[0].token, "MY_SECRET_TOKEN")
+        self.assertEqual(config.github_status_pushes[0].context, "buildbot")
+        self.assertEqual(config.github_status_pushes[0].builders, ["myrepo-build"])
+
+    def test_github_comment_pushes(self) -> None:
+        """
+        Test that GitHub comment pushes are parsed correctly.
+        """
+        config = BuildbotConfig(self.sample_config_str, is_yaml=True)
+        self.assertEqual(len(config.github_comment_pushes), 1)
+        self.assertEqual(config.github_comment_pushes[0].token, "MY_SECRET_TOKEN")
+        self.assertEqual(config.github_comment_pushes[0].context, "buildbot")
+        self.assertEqual(config.github_comment_pushes[0].builders, ["myrepo-build"])
 
 if __name__ == '__main__':
     unittest.main()
