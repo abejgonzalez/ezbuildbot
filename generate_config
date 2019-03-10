@@ -55,6 +55,17 @@ def parse_const_from_object(obj: Any) -> ast.expr:
     return body[0].value
 
 
+def parse_statement(stmt: str) -> ast.stmt:
+    """
+    Parse a single Python statement.
+    e.g. "x = 15" or "y += [1, 2, 3]"
+    """
+    body = ast.parse(stmt).body
+    assert len(body) == 1
+    assert isinstance(body[0], ast.stmt)
+    return body[0]
+
+
 def sanitize_name(name: str) -> str:
     """
     Sanitize the given name so that it can be a Python identifier.
@@ -71,6 +82,7 @@ def sanitize_name(name: str) -> str:
         return "_" + name
 
     return name
+
 
 class SubstituteVariables(ast.NodeTransformer):
     """
@@ -184,19 +196,34 @@ def generate_builder(builder: Builder, module: ast.Module) -> ast.FunctionDef:
     # Return a new function with no arguments
     return ast.FunctionDef(
         name=f"get_builder_{sanitize_name(builder.name)}",
-        args=ast.arguments(args=[], vararg=None, kwonlyargs=[], kwarg=None, defaults=[], kw_defaults=[]),
+        args=ast.arguments(args=[], vararg=None, kwonlyargs=[],
+                           kwarg=None, defaults=[], kw_defaults=[]),
         body=substituted_func.body,
         decorator_list=[],
         returns=None)
 
 
-class MyPass(ast.NodeTransformer):
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
-        print(astor.to_source(node))
-        print(repr(node.name))
-        return node
+def generate_get_builders(config: BuildbotConfig, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate the get_builders() function.
+    """
+    function: ast.FunctionDef = copy.deepcopy(
+        get_function("get_builders", module))
 
-# ~ tree = MyPass().visit(tree)
+    # Get all the builder functions
+    builder_functions = list(
+        map(lambda builder: generate_builder(builder, module), config.builders))
+
+    # Create a return expression for an array of these functions
+    return_expr = ast.Return(value=ast.List(
+        elts=list(map(lambda f: ast.Call(func=ast.Name(id=f.name),
+                                     args=[], keywords=[]), builder_functions))
+    ))
+
+    # Add new function body
+    function.body = builder_functions + [return_expr]
+
+    return function
 
 
 def parse_template_tree() -> ast.Module:
@@ -215,7 +242,7 @@ def main(args) -> int:
     config = BuildbotConfig.from_filename(args[1])
 
     # Generate new methods
-    print(astor.to_source(generate_builder(config.builders[0], tree)))
+    print(astor.to_source(generate_get_builders(config, tree)))
 
     # Substitute dummy methods
 
