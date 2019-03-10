@@ -1,5 +1,14 @@
 Easy to set up Docker-based buildbot config.
 
+Requirements
+============
+On Ubuntu:
+
+```
+sudo apt-get install docker.io python3-pip
+sudo -H pip3 install astor==0.7.1
+```
+
 Usage
 =====
 
