@@ -35,6 +35,15 @@ class BuildbotConfigTest(unittest.TestCase):
                          ("test2", "./test2.sh")
         ])
 
+    def test_workers(self) -> None:
+        """
+        Test that workers are parsed correctly.
+        """
+        config = BuildbotConfig(self.sample_config_str, is_yaml=True)
+        self.assertEqual(len(config.workers), 1)
+        self.assertEqual(config.workers[0].name, "testworker")
+        self.assertEqual(config.workers[0].password, "testpassword")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,3 +8,7 @@ builders:
   git_url: "git@github.com:myorg/otherepo.git"
   steps:
   - ["mytest", "./test.py"]
+
+workers:
+- name: "testworker"
+  password: "testpassword"

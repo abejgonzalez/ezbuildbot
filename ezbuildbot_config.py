@@ -32,6 +32,18 @@ class Builder(NamedTuple):
         )
 
 
+class Worker(NamedTuple):
+    name: str
+    password: str
+
+    @staticmethod
+    def from_dict(in_dict: Dict[str, Any]) -> "Worker":
+        return Worker(
+            name=str(in_dict['name']),
+            password=str(in_dict['password'])
+        )
+
+
 class BuildbotConfig:
     """
     Represents a buildbot config.
@@ -47,10 +59,15 @@ class BuildbotConfig:
             raw = json.loads(contents)
 
         self._builders = list(map(Builder.from_dict, raw['builders']))
+        self._workers = list(map(Worker.from_dict, raw['workers']))
 
     @property
     def builders(self) -> List[Builder]:
         return self._builders
+
+    @property
+    def workers(self) -> List[Worker]:
+        return self._workers
 
     @staticmethod
     def from_filename(filename: str) -> "BuildbotConfig":
