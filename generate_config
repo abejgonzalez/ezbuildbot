@@ -119,6 +119,45 @@ def generate_get_builders(config: BuildbotConfig, module: ast.Module) -> ast.Fun
     return function
 
 
+def generate_worker(worker: Worker, module: ast.Module) -> ast.expr:
+    function: ast.FunctionDef = get_function("template_create_worker", module)
+
+    check_signature(
+        "def template_create_worker(name: str, password: str) -> None: pass", function)
+
+    # Substitute name and command
+    # deepcopy functions since the transformer will modify the source tree
+    substituted_func = SubstituteVariablesExpr({
+        "name": ast.Str(worker.name),
+        "password": ast.Str(worker.password)
+    }).visit(copy.deepcopy(function))
+
+    # Return body of method
+    body = substituted_func.body
+    assert len(body) == 1, "only supports single expression worker template for now"
+    expr = body[0].value
+    assert isinstance(expr, ast.expr)
+    return expr
+
+
+def generate_get_workers(config: BuildbotConfig, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate the get_workers() function.
+    """
+    function: ast.FunctionDef = copy.deepcopy(
+        get_function("get_workers", module))
+
+    # Create a return expression for an array of these functions
+    return_expr: ast.stmt = ast.Return(value=ast.List(
+        elts=list(map(lambda worker: generate_worker(worker, module), config.workers))
+    ))
+
+    # Add new function body
+    function.body = [return_expr]
+
+    return function
+
+
 def parse_template_tree() -> ast.Module:
     with open("master-template.py", 'r') as f:
         template_str = str(f.read())
@@ -134,18 +173,17 @@ def main(args) -> int:
     # Load config
     config = BuildbotConfig.from_filename(args[1])
 
-    # Generate new methods
-    get_builders = generate_get_builders(config, code)
-
-    # Substitute dummy methods
+    # Generate and substitute dummy methods
     code = ReplaceFunction({
-        'get_builders': get_builders
+        'get_builders': generate_get_builders(config, code),
+        'get_workers': generate_get_workers(config, code)
     }).visit(copy.deepcopy(code))
 
     # Remove templates
     code = RemoveFunction({
         'template_create_step',
-        'template_create_builder'
+        'template_create_builder',
+        'template_create_worker'
     }).visit(copy.deepcopy(code))
 
     print(astor.to_source(code, indent_with="  "))
