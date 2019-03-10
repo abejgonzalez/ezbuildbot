@@ -160,7 +160,7 @@ def generate_incoming_webhook(webhook: GitHubIncomingWebhook, module: ast.Module
 
     return apply_templated_function_with_return(
         template=function,
-        signature="def template_github_incoming_webhook(name: str, reason: str, builders: List[str], filter_project: Optional[str]): ...",
+        signature="def template_github_incoming_webhook(name: str, description: str, builders: List[str], filter_project: Optional[str]): ...",
         arguments={
             "name": webhook.name,
             "description": webhook.description,

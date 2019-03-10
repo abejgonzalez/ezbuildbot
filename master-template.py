@@ -81,10 +81,10 @@ def template_create_builder(name: str, repourl: str, workernames: List[str]):
 def template_create_worker(name: str, password: str) -> None:
   worker.Worker(name, password)
 
-def template_github_incoming_webhook(name: str, reason: str, builders: List[str], filter_project: Optional[str]):
+def template_github_incoming_webhook(name: str, description: str, builders: List[str], filter_project: Optional[str]):
   return schedulers.AnyBranchScheduler(
     name = name,
-    reason = reason,
+    reason = description,
     builderNames = builders,
     change_filter = util.ChangeFilter(
       project=filter_project
