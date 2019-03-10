@@ -113,6 +113,18 @@ class SubstituteVariablesExpr(ast.NodeTransformer):
         return self.mapping.get(node.id, node)
 
 
+class ReplaceFunction(ast.NodeTransformer):
+    """
+    Transformation that replaces a set of functions with another.
+    """
+
+    def __init__(self, functions: Dict[str, ast.FunctionDef]) -> None:
+        self.functions: Dict[str, ast.FunctionDef] = functions
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        return self.functions.get(node.name, node)
+
+
 class RemoveFunction(ast.NodeTransformer):
     """
     Transformation that removes a set of functions.
@@ -257,9 +269,12 @@ def main(args) -> int:
     config = BuildbotConfig.from_filename(args[1])
 
     # Generate new methods
-    print(astor.to_source(generate_get_builders(config, code)))
+    get_builders = generate_get_builders(config, code)
 
     # Substitute dummy methods
+    code = ReplaceFunction({
+        'get_builders': get_builders
+    }).visit(copy.deepcopy(code))
 
     # Remove templates
     code = RemoveFunction({
