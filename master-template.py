@@ -40,6 +40,13 @@ def get_github_status_comment_pushes() -> list:
   """
   pass
 
+def get_github_change_hook_dialect() -> dict:
+  """
+  Get the github change_hook_dialects dictionary.
+  This method will be replaced by ./generate_config.
+  """
+  pass
+
 ########################################################################
 # These lines are template lines used by generate_config to generate
 # buildbot lines.
@@ -93,6 +100,12 @@ def template_github_status_push(token: str, context: str, builders: List[str]):
                                  endDescription='Build done.',
                                  builders=builders)
 
+def template_github_change_hook_dialect(secret: str):
+  return {
+    'secret': secret,
+    'pullrequest_ref': 'direct'
+  }
+
 ########################################################################
 # No need to modify the lines below this.
 ########################################################################
@@ -125,5 +138,8 @@ c['protocols'] = {'pb': {'port': BUILDBOT_COMMS_PORT}}
 # change_hook_dialects enables the github incoming webhooks
 c['buildbotURL'] = "http://localhost:{port}/".format(port=BUILDBOT_ADMIN_PORT)
 c['www'] = dict(port=BUILDBOT_ADMIN_PORT,
-                plugins=dict(waterfall_view={}, console_view={}, grid_view={})
+                plugins=dict(waterfall_view={}, console_view={}, grid_view={}),
+                change_hook_dialects={
+                  'github': get_github_change_hook_dialect()
+                }
 )

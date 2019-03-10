@@ -248,6 +248,23 @@ def generate_get_github_status_comment_pushes(config: BuildbotConfig, module: as
     return function
 
 
+def generate_get_github_change_hook_dialect(config: BuildbotConfig, module: ast.Module) -> ast.FunctionDef:
+    """
+    Generate a function that creates a GitHub status or comment push
+    depending on the argument.
+    """
+    function_template = get_function("template_github_change_hook_dialect", module)
+
+    return apply_templated_function_with_return(
+        template=function_template,
+        signature="def template_github_change_hook_dialect(secret: str): pass",
+        arguments={
+            "secret": config.github_webhook_secret
+        },
+        new_name="get_github_change_hook_dialect"
+    )
+
+
 def parse_template_tree(filename: str) -> ast.Module:
     with open(filename, 'r') as f:
         template_str = str(f.read())
@@ -268,7 +285,8 @@ def main(args) -> int:
         'get_builders': generate_get_builders(config, code),
         'get_workers': generate_get_workers(config, code),
         'get_github_incoming_webhooks': generate_get_github_incoming_webhooks(config, code),
-        'get_github_status_comment_pushes': generate_get_github_status_comment_pushes(config, code)
+        'get_github_status_comment_pushes': generate_get_github_status_comment_pushes(config, code),
+        'get_github_change_hook_dialect': generate_get_github_change_hook_dialect(config, code)
     }).visit(copy.deepcopy(code))
 
     # Remove templates
@@ -278,7 +296,8 @@ def main(args) -> int:
         'template_create_worker',
         'template_github_incoming_webhook',
         'template_github_comment_push',
-        'template_github_status_push'
+        'template_github_status_push',
+        'template_github_change_hook_dialect'
     }).visit(copy.deepcopy(code))
 
     print(astor.to_source(code, indent_with="  "))
