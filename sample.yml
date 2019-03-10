@@ -1,0 +1,9 @@
+builders:
+- name: "runtests"
+  git_url: "git://github.com/buildbot/hello-world.git"
+  steps:
+  - ["hello", "echo 'Hello world!'"]
+
+workers:
+- name: "exampleworker"
+  password: "password123456"

@@ -30,6 +30,10 @@ if [ -z "${BUILDBOT_COMMS_PORT+x}" ]; then
     export BUILDBOT_COMMS_PORT=9989
 fi
 
+if [ -z "${EZBUILDBOT_CONFIG+x}" ]; then
+    export EZBUILDBOT_CONFIG="${SCRIPT_DIR}/sample.yml"
+fi
+
 if [ -z "${BUILDBOT_WORKER_SCRIPTS+x}" ]; then
     export BUILDBOT_WORKER_SCRIPTS=""
 fi
@@ -51,8 +55,8 @@ if [ -z "${BUILDBOT_SSH_PASSTHROUGH+x}" ]; then
     export BUILDBOT_SSH_PASSTHROUGH=""
 fi
 
-if [ -z "${BUILDBOT_CONFIG+x}" ]; then
-    export BUILDBOT_CONFIG="${SCRIPT_DIR}/sample-master.cfg"
+if [ -z "${BUILDBOT_CONFIG_TEMPLATE+x}" ]; then
+    export BUILDBOT_CONFIG_TEMPLATE="${SCRIPT_DIR}/master-template.py"
 fi
 
 if [ -z "${BUILD_TEMPDIR+x}" ]; then
