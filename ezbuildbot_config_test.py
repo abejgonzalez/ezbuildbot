@@ -51,6 +51,13 @@ class BuildbotConfigTest(unittest.TestCase):
         config = BuildbotConfig(self.sample_config_str, is_yaml=True)
         self.assertEqual(config.github_webhook_secret, "my_webhook_secret")
 
+    def test_hostname(self) -> None:
+        """
+        Test that hostname is parsed correctly.
+        """
+        config = BuildbotConfig(self.sample_config_str, is_yaml=True)
+        self.assertEqual(config.hostname, "myhost.example.com")
+
     def test_github_incoming_webhooks(self) -> None:
         """
         Test that GitHub incoming webhooks are parsed correctly.

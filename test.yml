@@ -13,6 +13,8 @@ workers:
 - name: "testworker"
   password: "testpassword"
 
+hostname: "myhost.example.com"
+
 github_webhook_secret: "my_webhook_secret"
 
 github_incoming_webhooks:
