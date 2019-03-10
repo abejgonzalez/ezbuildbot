@@ -158,8 +158,8 @@ def generate_get_workers(config: BuildbotConfig, module: ast.Module) -> ast.Func
     return function
 
 
-def parse_template_tree() -> ast.Module:
-    with open("master-template.py", 'r') as f:
+def parse_template_tree(filename: str) -> ast.Module:
+    with open(filename, 'r') as f:
         template_str = str(f.read())
 
     tree = ast.parse(template_str)
@@ -168,10 +168,10 @@ def parse_template_tree() -> ast.Module:
 
 def main(args) -> int:
     # Load template
-    code = parse_template_tree()
+    code = parse_template_tree(args[1])
 
     # Load config
-    config = BuildbotConfig.from_filename(args[1])
+    config = BuildbotConfig.from_filename(args[2])
 
     # Generate and substitute dummy methods
     code = ReplaceFunction({
