@@ -5,7 +5,7 @@ Requirements
 On Ubuntu:
 
 ```
-sudo apt-get install docker.io python3-pip
+sudo apt-get install -y docker.io python3-pip
 sudo -H pip3 install astor==0.7.1
 ```
 
