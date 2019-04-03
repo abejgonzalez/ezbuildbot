@@ -14,8 +14,7 @@ if [ -z "${1-}" ]; then
 fi
 
 WORKER_NAME="$1"
-# TODO(edwardw): parametrize this as a script argument
-WORKER_PASSWORD="password123456"
+WORKER_PASSWORD="$2"
 
 # Worker instance name
 inst_name="${PROJ_PREFIX}-worker-inst-${WORKER_NAME}"
