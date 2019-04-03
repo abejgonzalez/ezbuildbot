@@ -36,7 +36,7 @@ def main(args: Dict[str, str]) -> int:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("scripts", nargs=1, help="Comma-delimited list of scripts")
+    parser.add_argument("scripts", nargs=1, help="Colon-delimited list of scripts")
     parser.add_argument("folder", nargs=1, help="Dockerfile directory (where to copy scripts into for building)")
     args = vars(parser.parse_args(sys.argv[1:]))
     sys.exit(main(args))
