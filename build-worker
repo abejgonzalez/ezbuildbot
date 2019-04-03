@@ -21,11 +21,12 @@ ENV GIT_TERMINAL_PROMPT 0
 # Set LANG/locale
 ENV LANG ${BUILDBOT_WORKER_LANG}
 
+# User-provided Dockerfrag.
+# User Dockerfrag might do prep work for scripts below.
+$(cat $BUILDBOT_WORKER_DOCKERFRAG)
+
 # User-specified scripts to run in the container.
 $($SCRIPT_DIR/generate-dockerfrag-for-scripts "$BUILDBOT_WORKER_SCRIPTS" "$BUILD_TEMPDIR")
-
-# User-provided Dockerfrag.
-$(cat $BUILDBOT_WORKER_DOCKERFRAG)
 
 # Set git identity to avoid issues with some commands.
 # e.g. "fatal: empty ident name" with git am
