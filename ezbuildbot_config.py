@@ -118,11 +118,11 @@ class BuildbotConfig:
             raw['github_webhook_secret'])
 
         self._github_incoming_webhooks = list(
-            map(GitHubIncomingWebhook.from_dict, raw['github_incoming_webhooks']))
+            map(GitHubIncomingWebhook.from_dict, raw.get('github_incoming_webhooks', [])))
         self._github_status_pushes = list(
-            map(GitHubStatusCommentPush.from_dict, raw['github_status_pushes']))
+            map(GitHubStatusCommentPush.from_dict, raw.get('github_status_pushes', [])))
         self._github_comment_pushes = list(
-            map(GitHubStatusCommentPush.from_dict, raw['github_comment_pushes']))
+            map(GitHubStatusCommentPush.from_dict, raw.get('github_comment_pushes', [])))
 
     @property
     def builders(self) -> List[Builder]:
