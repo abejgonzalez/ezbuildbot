@@ -13,7 +13,7 @@ source $SCRIPT_DIR/defaults.sh
 #~ cp $EZBUILDBOT_WORKDIR/buildbot/master/buildbot/steps/source/git.py $BUILD_TEMPDIR
 #~ cp $EZBUILDBOT_WORKDIR/buildbot/master/buildbot/reporters/github.py $BUILD_TEMPDIR/reporters_github.py
 
-$SCRIPT_DIR/generate_config $BUILDBOT_CONFIG_TEMPLATE $EZBUILDBOT_CONFIG > $BUILD_TEMPDIR/master.cfg
+cat $SCRIPT_DIR/master.cfg > $BUILD_TEMPDIR/master.cfg
 cat > $BUILD_TEMPDIR/Dockerfile.master <<EOF
 FROM ${PROJ_PREFIX}-master-base
 

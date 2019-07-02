@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # See https://stackoverflow.com/a/13864829
 
 if [ -z "${PROJ_PREFIX+x}" ]; then
-    export PROJ_PREFIX=myproject
+    export PROJ_PREFIX=chipyard
 fi
 
 if [ -z "${EZBUILDBOT_WORKDIR+x}" ]; then
@@ -31,7 +31,7 @@ if [ -z "${BUILDBOT_COMMS_PORT+x}" ]; then
 fi
 
 if [ -z "${EZBUILDBOT_CONFIG+x}" ]; then
-    export EZBUILDBOT_CONFIG="${SCRIPT_DIR}/sample.yml"
+    export EZBUILDBOT_CONFIG="${SCRIPT_DIR}/chipyard-config.yml"
 fi
 
 if [ -z "${BUILDBOT_WORKER_SCRIPTS+x}" ]; then

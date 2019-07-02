@@ -1,10 +1,10 @@
 builders:
 - name: "runtests"
-  git_url: "git://github.com/buildbot/hello-world.git"
+  git_url: "git://github.com/riscv-boom/riscv-boom.git"
   steps:
-  - ["hello", "echo 'Hello world!'"]
-  - ["2", "echo 'This is!'"]
-  - ["23", "echo 'A Test!'"]
+  - ["build verilator", "echo 'Hello world!'"]
+  - ["build the rtl", "echo 'This is!'"]
+  - ["run the tests", "echo 'A Test!'"]
 
 workers:
 - name: "exampleworker"
