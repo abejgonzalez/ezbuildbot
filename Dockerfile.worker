@@ -87,13 +87,13 @@ RUN apt-get update && \
     python3-setuptools \
     python3-pip \
     curl && \
-    # Test runs produce a great quantity of dead grandchild processes.  In a                                                                                                            │ 25 # Created by running:                                                                                                                                                                  
-    # non-docker environment, these are automatically reaped by init (process 1),                                                                                                       │ 24 # docker run --rm openjdk:9-slim cat /etc/ssl/certs/java/cacerts | #   aws s3 cp - s3://circle-downloads/circleci-images/cache/linux-amd64/openjdk-9-slim-cacerts --acl public-read    
-    # so we need to simulate that here.  See https://github.com/Yelp/dumb-init                                                                                                          │ 23 RUN if java -fullversion 2>&1 | grep -q '"9.'; then   curl --silent --show-error --location --fail --retry 3 --output /etc/ssl/certs/java/cacerts        https://circle-downloads.s3.am
+    # Test runs produce a great quantity of dead grandchild processes.  In a
+    # non-docker environment, these are automatically reaped by init (process 1),
+    # so we need to simulate that here.  See https://github.com/Yelp/dumb-init
     apt-get -y install -q dumb-init && \
     rm -rf /var/lib/apt/lists/* && \
     # Install required python packages, and twisted
-    pip3 --no-cache-dir install 'twisted[tls]' && \
+    pip3 --no-cache-dir install 'twisted[tls]'
 
 COPY . /usr/src/buildbot-worker
 COPY docker/buildbot.tac /home/buildbot/buildbot.tac
@@ -102,7 +102,7 @@ RUN pip3 install /usr/src/buildbot-worker && \
     chown -R buildbot /home/buildbot
 
 USER buildbot
-WORKDIR /home/buildbot            
+WORKDIR /home/buildbot
 
 # Add RISCV toolchain necessary dependencies
 RUN apt-get install -y \

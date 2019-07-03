@@ -32,5 +32,5 @@ popd
 
 # Build buildbot worker image
 pushd buildbot/worker
-docker build -t "${PROJ_PREFIX}-worker-base" -f Dockerfile.py3 .
+docker build -t "${PROJ_PREFIX}-worker-base" -f ../../Dockerfile.worker .
 popd
