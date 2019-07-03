@@ -12,51 +12,51 @@ if [ -z "${PROJ_PREFIX+x}" ]; then
     export PROJ_PREFIX=chipyard
 fi
 
-if [ -z "${EZBUILDBOT_WORKDIR+x}" ]; then
+if [ -z "${EZBB_WORKDIR+x}" ]; then
     # By default this is the script dir (folder this script resides in)
-    export EZBUILDBOT_WORKDIR="$SCRIPT_DIR"
+    export EZBB_WORKDIR="$SCRIPT_DIR"
 fi
-mkdir -p $EZBUILDBOT_WORKDIR
+mkdir -p $EZBB_WORKDIR
 
 if [ -z "${SQLITE_FILE+x}" ]; then
-    export SQLITE_FILE="${EZBUILDBOT_WORKDIR}/state.sqlite"
+    export SQLITE_FILE="${EZBB_WORKDIR}/state.sqlite"
 fi
 
-if [ -z "${BUILDBOT_ADMIN_PORT+x}" ]; then
-    export BUILDBOT_ADMIN_PORT=8020
+if [ -z "${BB_ADMIN_PORT+x}" ]; then
+    export BB_ADMIN_PORT=8020
 fi
 
-if [ -z "${BUILDBOT_COMMS_PORT+x}" ]; then
-    export BUILDBOT_COMMS_PORT=9989
+if [ -z "${BB_COMMS_PORT+x}" ]; then
+    export BB_COMMS_PORT=9989
 fi
 
-if [ -z "${EZBUILDBOT_CONFIG+x}" ]; then
-    export EZBUILDBOT_CONFIG="${SCRIPT_DIR}/chipyard-config.yml"
+if [ -z "${BB_WORKER_SCRIPTS+x}" ]; then
+    export BB_WORKER_SCRIPTS=""
 fi
 
-if [ -z "${BUILDBOT_WORKER_SCRIPTS+x}" ]; then
-    export BUILDBOT_WORKER_SCRIPTS=""
-fi
-
-if [ -z "${BUILDBOT_WORKER_DOCKERFRAG+x}" ]; then
+if [ -z "${BB_WORKER_DOCKERFRAG+x}" ]; then
     # Reading from /dev/null is equivalent to reading an empty file
-    export BUILDBOT_WORKER_DOCKERFRAG=/dev/null
+    export BB_WORKER_DOCKERFRAG=/dev/null
 fi
 
-if [ -z "${BUILDBOT_WORKER_LANG+x}" ]; then
-    export BUILDBOT_WORKER_LANG="C.UTF-8"
+if [ -z "${BB_WORKER_LANG+x}" ]; then
+    export BB_WORKER_LANG="C.UTF-8"
 fi
 
-if [ -z "${BUILDBOT_HASH+x}" ]; then
-    export BUILDBOT_HASH=ec38d8
+if [ -z "${BB_HASH+x}" ]; then
+    export BB_HASH=ec38d8
 fi
 
-if [ -z "${BUILDBOT_SSH_PASSTHROUGH+x}" ]; then
-    export BUILDBOT_SSH_PASSTHROUGH=""
+if [ -z "${BB_SHARE_LOCAL_DIR+x}" ]; then
+    export BB_SHARE_LOCAL_DIR="$SCRIPT_DIR/container-dir"
 fi
 
-if [ -z "${BUILDBOT_CONFIG_TEMPLATE+x}" ]; then
-    export BUILDBOT_CONFIG_TEMPLATE="${SCRIPT_DIR}/master-template.py"
+if [ -z "${BB_SHARE_DOCKER_DIR+x}" ]; then
+    export BB_SHARE_DOCKER_DIR="/var/log/container-data"
+fi
+
+if [ -z "${BB_SSH_PASSTHROUGH+x}" ]; then
+    export BB_SSH_PASSTHROUGH=""
 fi
 
 if [ -z "${BUILD_TEMPDIR+x}" ]; then

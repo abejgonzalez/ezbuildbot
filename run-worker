@@ -30,18 +30,19 @@ docker rm "$inst_name" --force || true
 # WORKERPASS: worker password
 
 # Pass SSH through if specified. If not, don't use this option.
-if [ -z "${BUILDBOT_SSH_PASSTHROUGH}" ]; then
+if [ -z "${BB_SSH_PASSTHROUGH}" ]; then
   ssh_options=()
 else
-  ssh_options=( "-v" "${BUILDBOT_SSH_PASSTHROUGH}:/home/buildbot/.ssh:ro" )
+  ssh_options=( "-v" "${BB_SSH_PASSTHROUGH}:/home/buildbot/.ssh:ro" )
 fi
 
 docker run \
   --name "$inst_name" \
   -it \
   --network host \
+  -v ${BB_SHARE_LOCAL_DIR}:${BB_SHARE_DOCKER_DIR} \
   -e "BUILDMASTER=localhost" \
-  -e "BUILDMASTER_PORT=${BUILDBOT_COMMS_PORT}" \
+  -e "BUILDMASTER_PORT=${BB_COMMS_PORT}" \
   -e "WORKERNAME=${WORKER_NAME}" \
   -e "WORKERPASS=${WORKER_PASSWORD}" \
   -d \

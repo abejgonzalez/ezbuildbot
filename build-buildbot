@@ -8,7 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 source $SCRIPT_DIR/defaults.sh
 
 # Work in workdir
-cd $EZBUILDBOT_WORKDIR
+cd $EZBB_WORKDIR
 
 # Check out buildbot folder if not present
 if [ ! -d "buildbot" ]; then
@@ -17,7 +17,7 @@ fi
 
 # Check out desired hash
 pushd buildbot
-git reset --hard $BUILDBOT_HASH
+git reset --hard $BB_HASH
 popd
 
 # Apply patches

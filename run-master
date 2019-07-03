@@ -20,9 +20,9 @@ docker rm "${PROJ_PREFIX}-master-inst" --force || true
 # -e "FOO=bar" = set environment variable in container
 docker run --name "${PROJ_PREFIX}-master-inst" -it \
   -v "${SQLITE_FILE}:/var/lib/buildbot/state.sqlite" \
-  -p $BUILDBOT_ADMIN_PORT:$BUILDBOT_ADMIN_PORT \
-  -p $BUILDBOT_COMMS_PORT:$BUILDBOT_COMMS_PORT \
-  -e "BUILDBOT_ADMIN_PORT=${BUILDBOT_ADMIN_PORT}" \
-  -e "BUILDBOT_COMMS_PORT=${BUILDBOT_COMMS_PORT}" \
+  -p $BB_ADMIN_PORT:$BB_ADMIN_PORT \
+  -p $BB_COMMS_PORT:$BB_COMMS_PORT \
+  -e "BB_ADMIN_PORT=${BB_ADMIN_PORT}" \
+  -e "BB_COMMS_PORT=${BB_COMMS_PORT}" \
   -d \
   "${PROJ_PREFIX}-master"
