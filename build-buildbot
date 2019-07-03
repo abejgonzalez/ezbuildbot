@@ -21,9 +21,9 @@ git reset --hard $BB_HASH
 popd
 
 # Apply patches
-pushd buildbot
-git am -3 $SCRIPT_DIR/patches/*.patch
-popd
+#pushd buildbot
+#git am -3 $SCRIPT_DIR/patches/*.patch
+#popd
 
 # Build buildbot master image
 pushd buildbot/master

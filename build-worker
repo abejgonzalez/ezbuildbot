@@ -36,9 +36,9 @@ RUN git config --global user.email "anonymous@example.com"
 
 # Run image (copied from parent Dockerfile)
 USER buildbot
-WORKDIR /buildbot
+WORKDIR $HOME
 
-CMD ["/usr/bin/dumb-init", "twistd", "--pidfile=", "-ny", "buildbot.tac"]
+CMD ["/usr/bin/dumb-init", "twistd", "--pidfile=", "-ny", "/home/buildbot/buildbot.tac"]
 EOF
 
 cd $BUILD_TEMPDIR

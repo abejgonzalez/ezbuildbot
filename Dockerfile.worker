@@ -101,35 +101,34 @@ COPY docker/buildbot.tac /home/buildbot/buildbot.tac
 RUN pip3 install /usr/src/buildbot-worker && \
     chown -R buildbot /home/buildbot
 
-USER buildbot
-WORKDIR /home/buildbot
-
 # Add RISCV toolchain necessary dependencies
-RUN apt-get install -y \
-            autoconf \
-            automake \
-            autotools-dev \
-            babeltrace \
-            bc \
-            bison \
-            curl \
-            device-tree-compiler \
-            expat \
-            flex \
-            gawk \
-            gperf \
-            libexpat-dev \
-            libgmp-dev \
-            libmpc-dev \
-            libmpfr-dev \
-            libtool \
-            libusb-1.0-0-dev \
-            patchutils \
-            pkg-config \
-            python \
-            python-pexpect \
-            texinfo \
-            zlib1g-dev
+RUN apt-get update && \
+    apt-get -y upgrade && \
+    apt-get install -y \
+    autoconf \
+    automake \
+    autotools-dev \
+    babeltrace \
+    bc \
+    bison \
+    curl \
+    device-tree-compiler \
+    expat \
+    flex \
+    gawk \
+    gperf \
+    libexpat-dev \
+    libgmp-dev \
+    libmpc-dev \
+    libmpfr-dev \
+    libtool \
+    libusb-1.0-0-dev \
+    patchutils \
+    pkg-config \
+    python \
+    python-pexpect \
+    texinfo \
+    zlib1g-dev
 
 # Update PATH for Java tools
 ENV PATH="/opt/sbt/bin:/opt/apache-maven/bin:/opt/apache-ant/bin:/opt/gradle/bin:$PATH"
@@ -149,7 +148,7 @@ RUN mvn -version \
 
 # END IMAGE CUSTOMIZATIONS
 
-WORKDIR $HOME
 USER buildbot
+WORKDIR $HOME
 
-CMD ["/usr/bin/dumb-init", "twistd", "--pidfile=", "-ny", "buildbot.tac"]
+CMD ["/usr/bin/dumb-init", "twistd", "--pidfile=", "-ny", "/home/buildbot/buildbot.tac"]
