@@ -2,6 +2,7 @@
 buildbot/
 # temp dir
 tmp/
+.*.swp
 
 # junk
 .mypy_cache
