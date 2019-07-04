@@ -22,6 +22,7 @@ docker run --name "${PROJ_PREFIX}-master-inst" -it \
   -v "${SQLITE_FILE}:/var/lib/buildbot/state.sqlite" \
   -p $BB_ADMIN_PORT:$BB_ADMIN_PORT \
   -p $BB_COMMS_PORT:$BB_COMMS_PORT \
+  -e "BB_SHARE_DOCKER_DIR=${BB_SHARE_DOCKER_DIR}" \
   -e "BB_ADMIN_PORT=${BB_ADMIN_PORT}" \
   -e "BB_COMMS_PORT=${BB_COMMS_PORT}" \
   -d \

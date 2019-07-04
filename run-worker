@@ -36,6 +36,8 @@ else
   ssh_options=( "-v" "${BB_SSH_PASSTHROUGH}:/home/buildbot/.ssh:ro" )
 fi
 
+echo "-v ${BB_SHARE_LOCAL_DIR}:${BB_SHARE_DOCKER_DIR} "
+
 docker run \
   --name "$inst_name" \
   -it \
@@ -43,6 +45,7 @@ docker run \
   -v ${BB_SHARE_LOCAL_DIR}:${BB_SHARE_DOCKER_DIR} \
   -e "BUILDMASTER=localhost" \
   -e "BUILDMASTER_PORT=${BB_COMMS_PORT}" \
+  -e "BB_SHARE_DOCKER_DIR=${BB_SHARE_DOCKER_DIR}" \
   -e "WORKERNAME=${WORKER_NAME}" \
   -e "WORKERPASS=${WORKER_PASSWORD}" \
   -d \
